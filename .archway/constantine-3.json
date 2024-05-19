@@ -1,0 +1,88 @@
+{
+  "deployments": [
+    {
+      "action": "instantiate",
+      "txhash": "2C72B7B5C3C3D8ECD6D6874959036530ADEC3255C95E393532BBCD8D3F355340",
+      "wasm": {
+        "codeId": 2625
+      },
+      "contract": {
+        "name": "contract-callback",
+        "version": "0.1.0",
+        "address": "archway1s3pcm6d78cadsfwqas03j6yxtvhefrwz8ens7gxwzqaj7rlnxnjq8zjvnm",
+        "admin": "archway1xtsm2ezhklnvmvw08y6ugjtmd6stdsqngkfmfn"
+      },
+      "msg": {
+        "count": 0
+      }
+    },
+    {
+      "action": "store",
+      "txhash": "2B34EFC47B95876778B48BCD4AB08CC37EAC247C024D05F3B992038EE6038EBB",
+      "wasm": {
+        "codeId": 2625,
+        "checksum": "ac86a2b1d9f4abe44ea5b1fb7a9758a9b5f700494c8f05a16becb01d5d107551"
+      },
+      "contract": {
+        "name": "contract-callback",
+        "version": "0.1.0"
+      }
+    },
+    {
+      "action": "instantiate",
+      "txhash": "66C98A0B5DA72B4C6C673322B564CD19F4E531D7575CD8D77DB03A337224810D",
+      "wasm": {
+        "codeId": 2623
+      },
+      "contract": {
+        "name": "contract-callback",
+        "version": "0.1.0",
+        "address": "archway1gcqduc9k7506gkpultk5ws8lekpllyxk7m00ujk67k4vjcvahjsq4zl7h2",
+        "admin": "archway1xtsm2ezhklnvmvw08y6ugjtmd6stdsqngkfmfn"
+      },
+      "msg": {
+        "count": 1
+      }
+    },
+    {
+      "action": "store",
+      "txhash": "F099B6E7EEA7E95B8925DB0969AFC1086CC6BDF6603554C73E0E63B01C4BE679",
+      "wasm": {
+        "codeId": 2623,
+        "checksum": "398b13a30e8182227ee20659b16613a11cf98b50e7bb3745f2f98ddb305489c3"
+      },
+      "contract": {
+        "name": "contract-callback",
+        "version": "0.1.0"
+      }
+    },
+    {
+      "action": "instantiate",
+      "txhash": "797340DA1707CCF082E1BDAF78958ADF5CDF9A37CB5A86F11AEF32E5FA3A726B",
+      "wasm": {
+        "codeId": 2622
+      },
+      "contract": {
+        "name": "contract-callback",
+        "version": "0.1.0",
+        "address": "archway1mrkr3pg2fe5maru5xrmery522atjad9utu339268u9c68zwq7g9q8kzz28",
+        "admin": "archway1xtsm2ezhklnvmvw08y6ugjtmd6stdsqngkfmfn"
+      },
+      "msg": {
+        "count": 0
+      }
+    },
+    {
+      "action": "store",
+      "txhash": "7DE786A2B05241872B63C40AF93757EBC48515D9DD2C70527C5A8E106809F7A2",
+      "wasm": {
+        "codeId": 2622,
+        "checksum": "d9a30b1bdd817caf954e7b1c0bb784e06ffefe3afaf8e70546b6accfd1656327"
+      },
+      "contract": {
+        "name": "contract-callback",
+        "version": "0.1.0"
+      }
+    }
+  ]
+}

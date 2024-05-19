@@ -1,0 +1,6 @@
+{
+  "chain-id": "constantine-3",
+  "contracts-path": "./contracts",
+  "keyring-backend": "file",
+  "keyring-path": "~/.config/archway/keys/file/"
+}
