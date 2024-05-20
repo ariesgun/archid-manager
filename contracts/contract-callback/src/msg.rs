@@ -10,10 +10,18 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Increment {},
     Reset { count: i32 },
-    #[cfg_attr(feature = "interface", payable)]
+    #[payable]
     Register {
         job_id: u64
-    }
+    },
+    #[payable]
+    MintDomain {
+        domain_name: String
+    },
+    #[payable]
+    RenewDomain {
+        domain_name: String
+    },
 }
 
 #[cw_serde]

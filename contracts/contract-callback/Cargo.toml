@@ -3,6 +3,7 @@ name = "contract-callback"
 version = "0.1.0"
 authors = ["Aries Thio <aries.thio@hotmail.com>"]
 edition = "2021"
+resolver = "2"
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -14,18 +15,20 @@ exclude = [
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[profile.release]
-codegen-units = 1
-debug = false
-debug-assertions = false
-incremental = false
-lto = true
-opt-level = 3
-overflow-checks = true
-panic = 'abort'
-rpath = false
+[[example]]
+name = "deploy"
+required-features = ["daemon"]
+
+[[example]]
+name = "interact"
+required-features = ["daemon"]
 
 [features]
+default = ["export"]
+export = []
+interface = ["export"]
+daemon = ["interface", "cw-orch/daemon"]
+
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
@@ -39,25 +42,40 @@ optimize = """docker run --rm \
   -v "$(basename "$(pwd)")_registry_cache":/usr/local/cargo/registry \
   -v "$(basename "$(pwd)")_cosmwasm_sccache":/root/.cache/sccache \
   --name "$(basename "$(pwd)")" \
-  cosmwasm/rust-optimizer:0.14.0
+  cosmwasm/rust-optimizer:0.15.0
 """
 
 [dependencies]
-archway-bindings = "0.2.1"
-cosmwasm-schema = "1.3.1"
-cosmwasm-std = "1.3.1"
+# archway-bindings = "0.2.1"
+cosmwasm-schema = "1.5.0"
+cosmwasm-std = { version = "1.5.0", default-features = false, features=["stargate", "cosmwasm_1_4"]}
 cosmwasm-storage = "1.3.1"
-cw-orch = "0.21.2"
-cw-storage-plus = "1.1.0"
+cw-orch = { version = "0.22.2"}
+cw-storage-plus = "1.2.0"
 cw2 = "1.1.0"
+cw-utils = "1.0.3"
 schemars = "0.8.12"
 serde = { version = "1.0.183", default-features = false, features = ["derive"] }
 serde_json = "1.0.79"
-thiserror = "1.0.44"
+thiserror = "1.0.21"
 prost = "0.12.6"
 prost-types = { version = "0.12.6" }
 cosmos-sdk-proto = { version = "0.20.0", default-features = false}
-semver = "1.0.23"
+
+archid-registry = { version = "1.0.3", features = ["library"] }
+cw721-archid = { version = "1.0.3", features = ["library"] }
+cw721 = "0.18.0"
+cw721-updatable = "1.0.5"
+archid-token = "1.0.3"
 
 [dev-dependencies]
-cw-multi-test = "0.17.0"
+dotenv = { version = "0.15.0" }
+speculoos = "0.11.0"
+semver = "1.0"
+env_logger = "0.10.0"
+cw-orch = { version = "0.22.2", features = ["daemon"]}
+clap = { version = "4.3.7", features = ["derive"] }
+
+# Testing cw20
+cw20-base = "0.16.0"
+cw20 = "0.16.0"

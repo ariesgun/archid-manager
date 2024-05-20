@@ -78,6 +78,48 @@
           }
         },
         "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "mint_domain"
+        ],
+        "properties": {
+          "mint_domain": {
+            "type": "object",
+            "required": [
+              "domain_name"
+            ],
+            "properties": {
+              "domain_name": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "renew_domain"
+        ],
+        "properties": {
+          "renew_domain": {
+            "type": "object",
+            "required": [
+              "domain_name"
+            ],
+            "properties": {
+              "domain_name": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     ]
   },

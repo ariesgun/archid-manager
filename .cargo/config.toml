@@ -1,0 +1,10 @@
+[alias]
+wasm = "build --release --lib --target wasm32-unknown-unknown"
+# wasm-lib = "build --release --lib --target wasm32-unknown-unknown"
+wasm-debug = "build --target wasm32-unknown-unknown"
+unit-test = "test --lib"
+schema = "run --bin schema"
+# schema = "run --example schema --features schema"
+
+publish = "run --example publish --features daemon"
+# local_daemon = "run --example local_daemon --features daemon"

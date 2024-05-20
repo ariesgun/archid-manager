@@ -1,16 +1,28 @@
-use cw_orch::prelude::*;
+use cw_orch::environment::ChainInfoOwned;
+use cw_orch::{interface, prelude::*};
 
-use crate::AppContract;
 
-impl<Chain: CwEnv> Uploadable for AppContract<Chain> {
+pub const CONTRACT_ID: &str = "contract_callback";
+
+#[interface(
+    crate::msg::InstantiateMsg,
+    crate::msg::ExecuteMsg,
+    crate::msg::QueryMsg,
+    crate::msg::MigrateMsg,
+    id = CONTRACT_ID
+)]
+pub struct AppContract;
+
+
+impl<Chain> Uploadable for AppContract<Chain> {
     /// Return the path to the wasm file corresponding to the contract
-    fn wasm(&self) -> WasmPath {
+    fn wasm(_chain: &ChainInfoOwned) -> WasmPath {
         artifacts_dir_from_workspace!()
-            .find_wasm_path("contract_callback")
+            .find_wasm_path(CONTRACT_ID)
             .unwrap()
     }
     /// Returns a CosmWasm contract wrapper
-    fn wrapper(&self) -> Box<dyn MockContract<Empty>> {
+    fn wrapper() -> Box<dyn MockContract<Empty>> {
         Box::new(
             ContractWrapper::new_with_empty(
                 crate::contract::execute,
