@@ -40,29 +40,6 @@
     {
       "type": "object",
       "required": [
-        "register"
-      ],
-      "properties": {
-        "register": {
-          "type": "object",
-          "required": [
-            "job_id"
-          ],
-          "properties": {
-            "job_id": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
-            }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
         "mint_domain"
       ],
       "properties": {
@@ -88,6 +65,48 @@
       ],
       "properties": {
         "renew_domain": {
+          "type": "object",
+          "required": [
+            "domain_name"
+          ],
+          "properties": {
+            "domain_name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "schedule_auto_renew"
+      ],
+      "properties": {
+        "schedule_auto_renew": {
+          "type": "object",
+          "required": [
+            "domain_name"
+          ],
+          "properties": {
+            "domain_name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "set_default"
+      ],
+      "properties": {
+        "set_default": {
           "type": "object",
           "required": [
             "domain_name"

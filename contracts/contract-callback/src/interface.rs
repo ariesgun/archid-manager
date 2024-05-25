@@ -29,6 +29,8 @@ impl<Chain> Uploadable for AppContract<Chain> {
                 crate::contract::instantiate,
                 crate::contract::query,
             )
+            .with_sudo(crate::contract::sudo)
+            .with_reply(crate::contract::reply)
             .with_migrate(crate::contract::migrate),
         )
     }

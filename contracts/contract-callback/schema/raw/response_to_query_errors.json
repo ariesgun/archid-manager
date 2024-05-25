@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QueryErrorsResponse",
+  "type": "object",
+  "required": [
+    "errors"
+  ],
+  "properties": {
+    "errors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/SudoError"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "SudoError": {
+      "type": "object",
+      "required": [
+        "contract_address",
+        "error_code",
+        "error_message",
+        "input_payload",
+        "module_name"
+      ],
+      "properties": {
+        "contract_address": {
+          "type": "string"
+        },
+        "error_code": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "input_payload": {
+          "type": "string"
+        },
+        "module_name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

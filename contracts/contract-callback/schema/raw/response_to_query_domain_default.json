@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DomainDefaultResponse",
+  "type": "object",
+  "required": [
+    "domain_id"
+  ],
+  "properties": {
+    "domain_id": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

@@ -2,7 +2,7 @@ use archid_registry::state::Config;
 use contract_callback::{msg::InstantiateMsg, AppContract, AppExecuteMsgFns, AppQueryMsgFns};
 use cosmwasm_std::{to_json_binary, Uint128};
 use cosmwasm_storage::ReadonlySingleton;
-use cw_orch::{anyhow, daemon::networks::CONSTANTINE_3, prelude::*};
+use cw_orch::{anyhow, daemon::{networks::CONSTANTINE_3, DaemonError}, prelude::*};
 
 pub fn main() -> anyhow::Result<()> {
 
@@ -23,7 +23,7 @@ pub fn main() -> anyhow::Result<()> {
     // counter.increment();
     println!("Count {:?}", counter.get_count()?);
 
-    let domain_name = "testdomainx2";
+    let domain_name = "testdomainx3";
 
     // let res = counter.mint_domain(
     //     domain_name.to_string(),
@@ -49,18 +49,19 @@ pub fn main() -> anyhow::Result<()> {
         expires: None
     };
 
-    // let res = chain.execute(
-    //     &approve_msg,
-    //     &[],
-    //     &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
-    // )?;
-    // println!("{:?}", res);
-
-    let res : cw721_updatable::NftInfoResponse<archid_token::Metadata> = chain.wasm_querier().smart_query(
+    let res = chain.execute(
+        &approve_msg,
+        &[],
         &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
-        &cw721_archid::msg::QueryMsg::<archid_token::Extension>::NftInfo { token_id: nft_id.clone() }
     )?;
     println!("{:?}", res);
+
+    // let res : Result<cw721_updatable::ApprovalResponse, DaemonError> = chain.wasm_querier().smart_query(
+    //     &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
+    //     &cw721_archid::msg::QueryMsg::<archid_token::Extension>::Approval { spender: "archway1f395p0gg67mmfd5zcqvpnp9cxnu0hg6r9hfczq".to_string(), token_id: nft_id.clone(), include_expired: None }
+    // );
+    // println!("{:?}", res.is_ok());
+    // println!("{:?}", res);
 
     let res : cw721_updatable::NftInfoResponse<archid_token::Metadata> = chain.wasm_querier().smart_query(
         &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
@@ -101,6 +102,26 @@ pub fn main() -> anyhow::Result<()> {
     //     &archid_registry::msg::QueryMsg::ResolveRecord { name: nft_id.clone() }
     // )?;
     // println!("{:?}", res);
+
+    // let res = counter.schedule_auto_renew( 
+    //     domain_name.to_string(), 
+    //     &[Coin {
+    //         amount: Uint128::new(0_300_000_000_000_000_000),
+    //         denom: "aconst".to_string()
+    //     }]
+    // );
+    // println!("{:?}", res);
+
+    // let res = counter.query_errors()?;
+    // println!("{:?}", res);
+
+    println!("Sender {}", chain.sender());
+
+    let res = counter.set_default("testdomainx2.arch".to_string())?;
+
+    let default_domain = counter.query_domain_default(chain.sender())?;
+    println!("Default domain {}", default_domain.domain_id);
+
 
     Ok(())
 }

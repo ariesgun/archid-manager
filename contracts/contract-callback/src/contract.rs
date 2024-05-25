@@ -10,6 +10,7 @@ const CONTRACT_NAME: &str = "crates.io:contract-callback";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 use crate::handlers::{execute_handler, instantiate_handler, query_handler, sudo_handler};
+use crate::state::CONFIG;
 
 
 #[cfg_attr(feature = "export", entry_point)]
@@ -72,11 +73,16 @@ fn handle_instantiate_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
     // // Do whatever you want with the attributes in the transfer event
     // // Reference to the full event: https://github.com/CosmWasm/cw-plus/blob/main/contracts/cw20-base/src/contract.rs#L239-L244
 
-    let cw721_contract = "archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008";
+    // let cw721_contract = "archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008";
+    let config = CONFIG.load(deps.storage)?;
+    let cw721_contract = config.cw721_archid_addr;
 
     let domain_name = mint_event.attributes.iter().find(|attr| attr.key == "token_id").unwrap().value.clone();
+    let receipent = mint_event.attributes.iter().find(|attr| attr.key == "domain_minter").unwrap().value.clone();
+
+    println!("hello {}", receipent);
     let transfer_msg: archid_token::ExecuteMsg = archid_token::ExecuteMsg::TransferNft { 
-        recipient: "archway1xtsm2ezhklnvmvw08y6ugjtmd6stdsqngkfmfn".to_string(),
+        recipient: receipent.to_string(),
         token_id: domain_name.into(),
     };
 
@@ -115,13 +121,21 @@ mod tests {
 
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, from_json};
+    use cosmwasm_std::{coins, from_json, Addr};
 
     #[test]
     fn proper_initialization() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg { count: 17 };
+        let cw721_addr = Addr::unchecked("cw721_addr");
+        let archid_registry_addr = Addr::unchecked("archid_registry");
+
+        let msg = InstantiateMsg { 
+            count: 17, 
+            cw721_archid_addr: cw721_addr,
+            archid_registry_addr: archid_registry_addr,
+            denom: "aarch".to_string()
+         };
         let info = mock_info("creator", &coins(1000, "earth"));
 
         // we can just call .unwrap() to assert this was a success
@@ -138,7 +152,15 @@ mod tests {
     fn increment() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg { count: 17 };
+        let cw721_addr = Addr::unchecked("cw721_addr");
+        let archid_registry_addr = Addr::unchecked("archid_registry");
+
+        let msg = InstantiateMsg { 
+            count: 17, 
+            cw721_archid_addr: cw721_addr,
+            archid_registry_addr: archid_registry_addr,
+            denom: "aarch".to_string()
+         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -157,7 +179,15 @@ mod tests {
     fn reset() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg { count: 17 };
+        let cw721_addr = Addr::unchecked("cw721_addr");
+        let archid_registry_addr = Addr::unchecked("archid_registry");
+
+        let msg = InstantiateMsg { 
+            count: 17, 
+            cw721_archid_addr: cw721_addr,
+            archid_registry_addr,
+            denom: "aarch".to_string()
+         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 

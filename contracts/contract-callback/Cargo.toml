@@ -67,6 +67,7 @@ cw721-archid = { version = "1.0.3", features = ["library"] }
 cw721 = "0.18.0"
 cw721-updatable = "1.0.5"
 archid-token = "1.0.3"
+cw721-base = { version = "0.18.0", features = ["library"] }
 
 [dev-dependencies]
 dotenv = { version = "0.15.0" }
@@ -79,3 +80,4 @@ clap = { version = "4.3.7", features = ["derive"] }
 # Testing cw20
 cw20-base = "0.16.0"
 cw20 = "0.16.0"
+anyhow = "1.0.86"
