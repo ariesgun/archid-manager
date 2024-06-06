@@ -1,5 +1,5 @@
 use cosmwasm_std::{to_json_binary, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, Uint128, WasmMsg};
-use crate::{msg::{ExecuteMsg, MsgRequestCallback}, state::{RenewInfo, CONFIG, DEFAULT_ID, JOBS, RENEW_MAP, STATE}, ContractError};
+use crate::{msg::{ExecuteMsg, MsgCancelCallback, MsgRequestCallback}, state::{RenewInfo, ACC_JOB_MAP, CONFIG, DEFAULT_ID, JOBS, RENEW_MAP, STATE}, ContractError};
 
 pub fn execute_handler(
     deps: DepsMut,
@@ -13,7 +13,8 @@ pub fn execute_handler(
         ExecuteMsg::MintDomain { domain_name } => mint_domain(deps, info, env, domain_name),
         ExecuteMsg::RenewDomain { domain_name } => renew_domain(deps, info, env, domain_name),
         ExecuteMsg::ScheduleAutoRenew { domain_name } => schedule_auto_renew(deps, info, env, domain_name),
-        ExecuteMsg::SetDefault { domain_name } => set_default(deps, info, env, domain_name)
+        ExecuteMsg::SetDefault { domain_name } => set_default(deps, info, env, domain_name),
+        ExecuteMsg::CancelAutoRenew { domain_name } => cancel_auto_renew(deps, info, env, domain_name),
     }
 }
 
@@ -141,12 +142,12 @@ pub fn renew_domain(deps: DepsMut, info: MessageInfo, env: Env, domain_name: Str
     let cw721_contract = config.cw721_archid_addr;
     let denom = config.denom;
 
-    let cost_per_year: u128 = 1_000_000_000_000_000_000;
+    let cost_per_year: u128 = 250_000_000_000_000_000;
     // let denom = "aconst";
 
     let nft_id = domain_name.clone() + ".arch";
 
-    let res = cw_utils::must_pay(&info, &String::from(denom.clone()))?;
+    let res: Uint128 = cw_utils::must_pay(&info, &String::from(denom.clone()))?;
     let registration: u64 =
         u64::try_from(((res.checked_div(cost_per_year.into())).unwrap()).u128()).unwrap();
     if registration < 1 {
@@ -237,7 +238,7 @@ pub fn schedule_auto_renew(deps: DepsMut, info: MessageInfo, env: Env, domain_na
     let contract_address = env.contract.address.to_string();
     let funds = &info.funds[0];
     let job_id = JOBS.load(deps.storage)? + 1;
-    let callback_height = env.block.height + 10;
+    let callback_height = env.block.height + 20;
 
     let fee = cosmos_sdk_proto::cosmos::base::v1beta1::Coin {
         denom: funds.denom.to_string(),
@@ -259,9 +260,12 @@ pub fn schedule_auto_renew(deps: DepsMut, info: MessageInfo, env: Env, domain_na
     let renew_info: RenewInfo = RenewInfo {
         owner: info.sender.to_owned(),
         domain_id: domain_name.to_string(),
+        callback_height: callback_height,
+        status: 0
     };
 
     let _ = RENEW_MAP.save(deps.storage, job_id, &renew_info);
+    let _ = ACC_JOB_MAP.save(deps.storage, domain_name.to_string(), &job_id);
 
     // let callback_msg = MsgSubscribeToError  {
     //     sender: contract_address.to_string(),
@@ -282,4 +286,30 @@ pub fn schedule_auto_renew(deps: DepsMut, info: MessageInfo, env: Env, domain_na
         .add_messages(messages)
     )
 
+}
+
+pub fn cancel_auto_renew (deps: DepsMut, info: MessageInfo, env: Env, domain_name: String) -> Result<Response, ContractError> {
+
+    let job_id = ACC_JOB_MAP.load(deps.storage, domain_name)?;
+
+    let job_info = RENEW_MAP.load(deps.storage, job_id.clone())?;
+
+    let contract_address = env.contract.address.to_string();
+    let cancel_msg = MsgCancelCallback {
+        sender: contract_address.to_string(),
+        job_id: job_id.clone(),
+        callback_height: job_info.callback_height.clone(),
+        contract_address: contract_address.clone()
+    };
+    let cancel_stargate_msg = CosmosMsg::Stargate {
+        type_url: "/archway.callback.v1.MsgCancelCallback".to_string(),
+        value: Binary::from(::cosmos_sdk_proto::traits::Message::encode_to_vec(&cancel_msg)),
+    };
+
+    let messages = vec![cancel_stargate_msg];
+
+    Ok(Response::new()
+        .add_attribute("action", "cancel_auto_renew")
+        .add_messages(messages)
+    )
 }

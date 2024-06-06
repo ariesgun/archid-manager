@@ -1,6 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
+use crate::state::RenewInfo;
+
 #[cw_serde]
 pub struct InstantiateMsg {
     pub count: i32,
@@ -26,6 +28,10 @@ pub enum ExecuteMsg {
     ScheduleAutoRenew {
         domain_name: String
     },
+    #[payable]
+    CancelAutoRenew {
+        domain_name: String
+    },
     SetDefault {
         domain_name: String
     }
@@ -43,7 +49,11 @@ pub enum QueryMsg {
     #[returns(DomainDefaultResponse)]
     QueryDomainDefault {
         address: Addr
-    }
+    },
+    #[returns(RenewMapResponse)]
+    QueryRenewMap {
+        job_id: u64
+    },
 }
 
 // We define a custom struct for each query response
@@ -55,6 +65,11 @@ pub struct GetCountResponse {
 #[cw_serde]
 pub struct DomainDefaultResponse {
     pub domain_id: String,
+}
+
+#[cw_serde]
+pub struct RenewMapResponse {
+    pub renew_info: RenewInfo,
 }
 
 #[cw_serde]
@@ -101,6 +116,19 @@ pub struct MsgRequestCallback {
     pub contract_address: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "5")]
     pub fees: ::core::option::Option<::cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
+}
+
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MsgCancelCallback {
+    #[prost(string, tag = "1")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "3")]
+    pub job_id: u64,
+    #[prost(uint64, tag = "4")]
+    pub callback_height: u64,
+    #[prost(string, tag = "2")]
+    pub contract_address: ::prost::alloc::string::String,
 }
 
 #[allow(clippy::derive_partial_eq_without_eq)]

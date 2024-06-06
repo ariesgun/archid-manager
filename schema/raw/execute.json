@@ -103,27 +103,6 @@
     {
       "type": "object",
       "required": [
-        "cancel_auto_renew"
-      ],
-      "properties": {
-        "cancel_auto_renew": {
-          "type": "object",
-          "required": [
-            "domain_name"
-          ],
-          "properties": {
-            "domain_name": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
         "set_default"
       ],
       "properties": {

@@ -1,6 +1,6 @@
 use archid_registry::state::Config;
 use contract_callback::{msg::InstantiateMsg, AppContract, AppExecuteMsgFns, AppQueryMsgFns};
-use cosmwasm_std::{to_json_binary, Uint128};
+use cosmwasm_std::{to_json_binary, BankMsg, Uint128};
 use cosmwasm_storage::ReadonlySingleton;
 use cw_orch::{anyhow, daemon::{networks::CONSTANTINE_3, DaemonError}, prelude::*};
 
@@ -21,9 +21,12 @@ pub fn main() -> anyhow::Result<()> {
     // Incrementing count
     println!("ID {:?}", counter.code_id());
     // counter.increment();
+    // counter.increment();
+    // counter.increment();
+    // counter.reset(1);
     println!("Count {:?}", counter.get_count()?);
 
-    let domain_name = "testdomainx3";
+    let domain_name = "testdomainx7";
 
     // let res = counter.mint_domain(
     //     domain_name.to_string(),
@@ -34,7 +37,7 @@ pub fn main() -> anyhow::Result<()> {
     // )?;
     // println!("Res {:?}", res);
 
-    // Register a callback every day
+    // // Register a callback every day
     // let res: cw721_updatable::ContractInfoResponse = chain.wasm_querier().smart_query(
     //     &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
     //     &cw721_archid::msg::QueryMsg::<Empty>::ContractInfo {  }
@@ -43,18 +46,18 @@ pub fn main() -> anyhow::Result<()> {
 
     let nft_id = domain_name.to_string() + ".arch";
 
-    let approve_msg: cw721_archid::ExecuteMsg<Option<Empty>, Empty> = cw721_archid::msg::ExecuteMsg::<Option<Empty>, Empty>::Approve {
-        spender: counter.addr_str()?.to_string(),
-        token_id: nft_id.clone(),
-        expires: None
-    };
+    // let approve_msg: cw721_archid::ExecuteMsg<Option<Empty>, Empty> = cw721_archid::msg::ExecuteMsg::<Option<Empty>, Empty>::Approve {
+    //     spender: counter.addr_str()?.to_string(),
+    //     token_id: nft_id.clone(),
+    //     expires: None
+    // };
 
-    let res = chain.execute(
-        &approve_msg,
-        &[],
-        &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
-    )?;
-    println!("{:?}", res);
+    // let res = chain.execute(
+    //     &approve_msg,
+    //     &[],
+    //     &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
+    // )?;
+    // println!("{:?}", res);
 
     // let res : Result<cw721_updatable::ApprovalResponse, DaemonError> = chain.wasm_querier().smart_query(
     //     &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
@@ -106,9 +109,15 @@ pub fn main() -> anyhow::Result<()> {
     // let res = counter.schedule_auto_renew( 
     //     domain_name.to_string(), 
     //     &[Coin {
-    //         amount: Uint128::new(0_300_000_000_000_000_000),
+    //         amount: Uint128::new(0_150_000_000_000_000_000),
     //         denom: "aconst".to_string()
     //     }]
+    // );
+    // println!("{:?}", res);
+
+    // let res = counter.cancel_auto_renew(
+    //     domain_name.to_string(), 
+    //     &[]
     // );
     // println!("{:?}", res);
 
@@ -117,10 +126,13 @@ pub fn main() -> anyhow::Result<()> {
 
     println!("Sender {}", chain.sender());
 
-    let res = counter.set_default("testdomainx2.arch".to_string())?;
+    let res = counter.query_renew_map(2);
+    println!("Res {:?}", res);
 
-    let default_domain = counter.query_domain_default(chain.sender())?;
-    println!("Default domain {}", default_domain.domain_id);
+    // let res = counter.set_default("testdomainx6.arch".to_string())?;
+
+    // let default_domain = counter.query_domain_default(chain.sender())?;
+    // println!("Default domain {}", default_domain.domain_id);
 
 
     Ok(())

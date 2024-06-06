@@ -1,7 +1,7 @@
 use cosmwasm_std::{to_json_binary, Addr, Binary, Deps, Env, StdResult};
 use crate::{
-    msg::{DomainDefaultResponse, GetCountResponse, QueryErrorsRequest, QueryErrorsResponse, QueryMsg},
-    state::{STATE, DEFAULT_ID}
+    msg::{DomainDefaultResponse, GetCountResponse, QueryErrorsRequest, QueryErrorsResponse, QueryMsg, RenewMapResponse},
+    state::{DEFAULT_ID, RENEW_MAP, STATE}
 };
 
 
@@ -14,6 +14,7 @@ pub fn query_handler(
         QueryMsg::GetCount {} => to_json_binary(&count(deps)?),
         QueryMsg::QueryErrors {} => to_json_binary(&query_cw_errors(deps, env)?),
         QueryMsg::QueryDomainDefault {address} => to_json_binary(&query_domain_default(deps, address)?),
+        QueryMsg::QueryRenewMap { job_id} => to_json_binary(&query_renew_map(deps, env, job_id)?),
     }
 }
 
@@ -25,6 +26,11 @@ pub fn count(deps: Deps) -> StdResult<GetCountResponse> {
 pub fn query_domain_default(deps: Deps, address: Addr) -> StdResult<DomainDefaultResponse> {
     let default_id = DEFAULT_ID.load(deps.storage, address)?;
     Ok(DomainDefaultResponse { domain_id: default_id })
+}
+
+pub fn query_renew_map(deps: Deps, env: Env, job_id: u64) -> StdResult<RenewMapResponse> {
+    let renew_info = RENEW_MAP.load(deps.storage, job_id)?;
+    Ok(RenewMapResponse { renew_info })
 }
 
 pub fn query_cw_errors(

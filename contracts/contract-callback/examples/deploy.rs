@@ -3,7 +3,7 @@ use cw_orch::{anyhow, daemon::networks::CONSTANTINE_3, prelude::*};
 
 pub fn main() -> anyhow::Result<()> {
 
-    dotenv::dotenv().ok();
+    dotenv::dotenv().ok(); 
     env_logger::init();
 
     // We start by creating a daemon. This daemon will be used to interact with the chain.

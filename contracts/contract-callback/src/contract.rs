@@ -10,7 +10,7 @@ const CONTRACT_NAME: &str = "crates.io:contract-callback";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 use crate::handlers::{execute_handler, instantiate_handler, query_handler, sudo_handler};
-use crate::state::CONFIG;
+use crate::state::{CONFIG, RENEW_MAP};
 
 
 #[cfg_attr(feature = "export", entry_point)]
@@ -51,9 +51,43 @@ pub fn sudo(
 #[cfg_attr(feature = "export", entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
     match msg.id {
-        1u64 => handle_instantiate_reply(deps, msg),
-        id => Err(StdError::generic_err(format!("Unknown reply id: {}", id))),
+        id => handle_reply(deps, msg)
+        // 1u64 => handle_reply(deps, msg),
+        // 2u64 => Ok(Response::new()),
+        // id => Err(StdError::generic_err(format!("Unknown reply id: {}", id))),
     }
+}
+fn handle_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
+    // Handle the msg data and save the contract address
+    // See: https://github.com/CosmWasm/cw-plus/blob/main/packages/utils/src/parse_reply.rs
+    // let data = msg.result.into_result().map_err(StdError::generic_err)?;
+    // Search for the transfer event
+    // If there are multiple transfers, you will need to find the right event to handle
+    // let mint_event = data
+    //     .events
+    //     .iter()
+    //     .find(|e| {
+    //         e.attributes
+    //             .iter()
+    //             .any(|attr| attr.key == "action" && attr.value == "mint")
+    //     })
+    //     .ok_or_else(|| StdError::generic_err(format!("unable to find transfer action")))?;
+    // // // Do whatever you want with the attributes in the transfer event
+    // // // Reference to the full event: https://github.com/CosmWasm/cw-plus/blob/main/contracts/cw20-base/src/contract.rs#L239-L244
+
+    let job_id = msg.id;
+
+    if job_id == 999 {
+        return Err(StdError::generic_err(format!("Unknown reply id: {}", job_id)));
+    }
+
+    let mut renew_info = RENEW_MAP.load(deps.storage, job_id)?;
+    renew_info.status = 222;
+    let _ = RENEW_MAP.save(deps.storage, job_id, &renew_info);
+
+    Ok(Response::new()
+        .add_attribute("reply", "okay")
+    )
 }
 fn handle_instantiate_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
     // Handle the msg data and save the contract address

@@ -21,10 +21,13 @@ pub struct Config {
 pub struct RenewInfo {
     pub owner: Addr,
     pub domain_id: String,
+    pub callback_height: u64,
+    pub status: u64,
 }
 
 pub const STATE: Item<State> = Item::new("state");
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const JOBS: Item<u64> = Item::new("jobs");
+pub const ACC_JOB_MAP: Map<String, u64> = Map::new("acc_job_map");
 pub const RENEW_MAP: Map<u64, RenewInfo> = Map::new("renew_info");
 pub const DEFAULT_ID: Map<Addr, String> = Map::new("default_id");
