@@ -1,8 +1,9 @@
 use archid_registry::state::Config;
 use contract_callback::{msg::InstantiateMsg, AppContract, AppExecuteMsgFns, AppQueryMsgFns};
-use cosmwasm_std::{to_json_binary, BankMsg, Uint128};
+use cosmwasm_std::{to_json_binary, BankMsg, BlockInfo, Timestamp, Uint128};
 use cosmwasm_storage::ReadonlySingleton;
 use cw_orch::{anyhow, daemon::{networks::CONSTANTINE_3, DaemonError}, prelude::*};
+use cw_utils::Scheduled;
 
 pub fn main() -> anyhow::Result<()> {
 
@@ -26,12 +27,12 @@ pub fn main() -> anyhow::Result<()> {
     // counter.reset(1);
     println!("Count {:?}", counter.get_count()?);
 
-    let domain_name = "testdomainx7";
+    let domain_name = "testdomainx11";
 
     // let res = counter.mint_domain(
     //     domain_name.to_string(),
     //     &[Coin {
-    //         amount: Uint128::new(1_000_000_000_000_000_000),
+    //         amount: Uint128::new(0_250_000_000_000_000_000),
     //         denom: "aconst".to_string()
     //     }]
     // )?;
@@ -54,7 +55,7 @@ pub fn main() -> anyhow::Result<()> {
 
     // let res = chain.execute(
     //     &approve_msg,
-    //     &[],
+    //     &[], 
     //     &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
     // )?;
     // println!("{:?}", res);
@@ -109,7 +110,16 @@ pub fn main() -> anyhow::Result<()> {
     // let res = counter.schedule_auto_renew( 
     //     domain_name.to_string(), 
     //     &[Coin {
-    //         amount: Uint128::new(0_150_000_000_000_000_000),
+    //         amount: Uint128::new(0_400_000_000_000_000_000),
+    //         denom: "aconst".to_string()
+    //     }]
+    // );
+    // println!("{:?}", res);
+
+    // let res = counter.schedule_auto_renew( 
+    //     domain_name.to_string(), 
+    //     &[Coin {
+    //         amount: Uint128::new(0_001_000_000_000_000_000),
     //         denom: "aconst".to_string()
     //     }]
     // );
@@ -124,10 +134,42 @@ pub fn main() -> anyhow::Result<()> {
     // let res = counter.query_errors()?;
     // println!("{:?}", res);
 
+    // let expired_time = Timestamp::from_seconds(1809961824);
+    // let duration = expired_time.minus_seconds(chain.block_info()?.time.seconds());
+    // let block_height_diff = duration.seconds() / 5;
+    // println!("Days {}", duration.seconds() / 86400);
+    // println!("Block diff {}", block_height_diff);
+    // println!("Current block {}", chain.block_info()?.height);
+    // println!("Timestamp {}", chain.block_info()?.time.seconds());
+
+    // Max future 432000
+
     println!("Sender {}", chain.sender());
 
-    let res = counter.query_renew_map(2);
+    // let res = counter.stop_cron_job()?;
+
+    // let res = counter.start_cron_job(
+    //     &[Coin {
+    //                 amount: Uint128::new(0_350_000_000_000_000_000),
+    //                 denom: "aconst".to_string()
+    //             }]
+    // );
+    // println!("Res {:?}", res);
+    // let res = counter.cancel_auto_renew(&[])?;
+    // println!("Res {:?}", res);
+    // let res = counter.withdraw()?;
+    // println!("Res {:?}", res);
+
+    // let res = counter.query_renew_jobs_map(1);
+    let res = counter.query_renew_map("hellotestarchid1".to_owned());
     println!("Res {:?}", res);
+    let res = counter.query_renew_map("hellotestarchid2".to_owned());
+    println!("Res {:?}", res);
+    let res = counter.query_renew_map("hellotestarchid3".to_owned());
+    println!("Res {:?}", res);
+    let res = counter.query_renew_map("hellotestarchid4".to_owned());
+    println!("Res {:?}", res);
+
 
     // let res = counter.set_default("testdomainx6.arch".to_string())?;
 

@@ -29,7 +29,8 @@
           "properties": {
             "count": {
               "type": "integer",
-              "format": "int32"
+              "format": "uint64",
+              "minimum": 0.0
             }
           },
           "additionalProperties": false
@@ -103,6 +104,19 @@
     {
       "type": "object",
       "required": [
+        "cancel_auto_renew"
+      ],
+      "properties": {
+        "cancel_auto_renew": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "set_default"
       ],
       "properties": {
@@ -116,6 +130,45 @@
               "type": "string"
             }
           },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "start_cron_job"
+      ],
+      "properties": {
+        "start_cron_job": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "deposit"
+      ],
+      "properties": {
+        "deposit": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "withdraw"
+      ],
+      "properties": {
+        "withdraw": {
+          "type": "object",
           "additionalProperties": false
         }
       },

@@ -14,7 +14,8 @@
     },
     "count": {
       "type": "integer",
-      "format": "int32"
+      "format": "uint64",
+      "minimum": 0.0
     },
     "cw721_archid_addr": {
       "$ref": "#/definitions/Addr"

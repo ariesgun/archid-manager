@@ -21,4 +21,16 @@ pub enum ContractError {
 
     #[error("Job ID not found")]
     NotFoundJobId {},
+
+    #[error("Unapproved")]
+    Unapproved {},
+
+    #[error("Expiry data is still more than a year")]
+    ExpiryLong {},
+
+    #[error("Insufficient fund")]
+    InsufficientFund {},
+
+    #[error("Callback cronjob is already running")]
+    CallbackAlreadyRunning{},
 }

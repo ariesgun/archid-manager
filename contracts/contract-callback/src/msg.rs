@@ -1,11 +1,11 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
-use crate::state::RenewInfo;
+use crate::state::{RenewInfo, State};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub count: i32,
+    pub count: u64,
     pub cw721_archid_addr: Addr,
     pub archid_registry_addr: Addr,
     pub denom: String
@@ -15,7 +15,6 @@ pub struct InstantiateMsg {
 #[derive(cw_orch::ExecuteFns)]
 pub enum ExecuteMsg {
     Increment {},
-    Reset { count: i32 },
     #[payable]
     MintDomain {
         domain_name: String
@@ -28,13 +27,23 @@ pub enum ExecuteMsg {
     ScheduleAutoRenew {
         domain_name: String
     },
-    #[payable]
     CancelAutoRenew {
         domain_name: String
     },
     SetDefault {
         domain_name: String
-    }
+    },
+    #[payable]
+    StartCronJob {
+    },
+    StopCronJob {
+    },
+    #[payable]
+    Deposit {
+
+    },
+    Withdraw {
+    },
 }
 
 #[cw_serde]
@@ -52,14 +61,18 @@ pub enum QueryMsg {
     },
     #[returns(RenewMapResponse)]
     QueryRenewMap {
-        job_id: u64
+        domain_name: String
+    },
+    #[returns(RenewJobsMapResponse)]
+    QueryRenewJobsMap {
+        block_id: u64
     },
 }
 
 // We define a custom struct for each query response
 #[cw_serde]
 pub struct GetCountResponse {
-    pub count: i32,
+    pub state: State,
 }
 
 #[cw_serde]
@@ -69,7 +82,12 @@ pub struct DomainDefaultResponse {
 
 #[cw_serde]
 pub struct RenewMapResponse {
-    pub renew_info: RenewInfo,
+    pub renew_info: Option<RenewInfo>,
+}
+
+#[cw_serde]
+pub struct RenewJobsMapResponse {
+    pub renew_jobs: Vec<String>,
 }
 
 #[cw_serde]

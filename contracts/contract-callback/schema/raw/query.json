@@ -58,10 +58,31 @@
         "query_renew_map": {
           "type": "object",
           "required": [
-            "job_id"
+            "domain_name"
           ],
           "properties": {
-            "job_id": {
+            "domain_name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "query_renew_jobs_map"
+      ],
+      "properties": {
+        "query_renew_jobs_map": {
+          "type": "object",
+          "required": [
+            "block_id"
+          ],
+          "properties": {
+            "block_id": {
               "type": "integer",
               "format": "uint64",
               "minimum": 0.0

@@ -34,58 +34,6 @@ pub fn archid_registry_contract() -> Box<dyn Contract<Empty>> {
 }
 
 #[test]
-fn count() -> anyhow::Result<()> {
-    // Create a user
-    // let user = Addr::unchecked(USER);
-    // Create the mock. This will be our chain object throughout
-    let mock = MockBech32::new("mock");
-    let user = mock.addr_make(USER);
-
-    // Set up the contract (Definition below) ↓↓
-    let (contract, cw721_archid_addr, archid_registry_addr) = setup(mock.clone())?;
-
-    // Increment the count of the contract
-    contract
-        // Set the caller to user
-        .call_as(&user)
-        // Call the increment function (auto-generated function provided by CounterExecuteMsgFns)
-        .increment()?;
-
-    // Get the count.
-    use contract_callback::AppQueryMsgFns;
-    let count1 = contract.get_count()?;
-
-    // or query it manually
-    let count2: GetCountResponse = contract.query(&QueryMsg::GetCount {})?;
-    assert_eq!(count1.count, count2.count);
-
-    // Or get it manually from the chain
-    let count3: GetCountResponse = mock.query(&QueryMsg::GetCount {}, &contract.address()?)?;
-    assert_eq!(count1.count, count3.count);
-
-    // Check the count
-    assert_eq!(count1.count, 2);
-    // Reset
-    use contract_callback::AppExecuteMsgFns;
-    contract.reset(0)?;
-
-    let count = contract.get_count()?;
-    assert_eq!(count.count, 0);
-
-    // Check negative case
-    let exec_res: Result<cw_orch::mock::cw_multi_test::AppResponse, CwOrchError> =
-        contract.call_as(&user).reset(0);
-
-    let expected_err = ContractError::Unauthorized {};
-    assert_eq!(
-        exec_res.unwrap_err().downcast::<ContractError>()?,
-        expected_err
-    );
-
-    Ok(())
-}
-
-#[test]
 fn mint_domain() -> anyhow::Result<()> {
 
     let mock = MockBech32::new("mock");
@@ -286,7 +234,6 @@ fn renew_domain() -> anyhow::Result<()> {
 
 
     Ok(())
-
 }
 
 /// Instantiate the contract in any CosmWasm environment
@@ -369,10 +316,10 @@ fn setup(mock: MockBech32) -> anyhow::Result<(AppContract<MockBech32>, Addr, Add
 
     // Instantiate the contract
     let msg = InstantiateMsg { 
-        count: 1i32 ,
+        count: 1u64 ,
         cw721_archid_addr: cw721_archid_addr.clone(),
         archid_registry_addr: archid_registry_addr.clone(),
-        denom: "aarch".to_string()
+        denom: "aarch".to_string(),
     };
     let init_resp = contract.instantiate(
         &msg, 
