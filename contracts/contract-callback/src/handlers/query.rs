@@ -33,7 +33,7 @@ pub fn query_domain_default(deps: Deps, address: Addr) -> StdResult<DomainDefaul
     }
 }
 
-pub fn query_renew_map(deps: Deps, env: Env, domain_name: String) -> StdResult<RenewMapResponse> {
+pub fn query_renew_map(deps: Deps, _env: Env, domain_name: String) -> StdResult<RenewMapResponse> {
     
     let job_id = ACC_JOB_MAP.may_load(deps.storage, domain_name)?;
     if job_id.is_none() {
@@ -44,7 +44,7 @@ pub fn query_renew_map(deps: Deps, env: Env, domain_name: String) -> StdResult<R
     }
 }
 
-pub fn query_renew_job_map(deps: Deps, env: Env, block_id: u64) -> StdResult<RenewJobsMapResponse> {
+pub fn query_renew_job_map(deps: Deps, _env: Env, block_id: u64) -> StdResult<RenewJobsMapResponse> {
     let renew_jobs = RENEW_JOBS_MAP.may_load(deps.storage, block_id)?;
     if renew_jobs.is_none() {
         Ok(RenewJobsMapResponse { renew_jobs: vec![]})
@@ -72,8 +72,6 @@ pub fn query_cw_errors(
 
 #[cfg(test)]
 mod tests {
-    use crate::msg::GetCountResponse;
-
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_json, Addr};

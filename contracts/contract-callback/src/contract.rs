@@ -1,4 +1,4 @@
-use cosmwasm_std::{entry_point, to_json_binary, wasm_execute, CosmosMsg, Reply, WasmMsg};
+use cosmwasm_std::{entry_point, Reply};
 use cosmwasm_std::{Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdError, StdResult};
 use cw2::set_contract_version;
 
@@ -10,7 +10,7 @@ const CONTRACT_NAME: &str = "crates.io:contract-callback";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 use crate::handlers::{execute_handler, instantiate_handler, query_handler, sudo_handler};
-use crate::state::{CONFIG, RENEW_MAP, STATE};
+use crate::state::{RENEW_MAP, STATE};
 
 
 #[cfg_attr(feature = "export", entry_point)]
@@ -49,32 +49,10 @@ pub fn sudo(
 }
 
 #[cfg_attr(feature = "export", entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
-    match msg.id {
-        id => handle_reply(deps, msg)
-        // 1u64 => handle_reply(deps, msg),
-        // 2u64 => Ok(Response::new()),
-        // id => Err(StdError::generic_err(format!("Unknown reply id: {}", id))),
-    }
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
+    handle_reply(deps, env, msg)
 }
-fn handle_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
-    // Handle the msg data and save the contract address
-    // See: https://github.com/CosmWasm/cw-plus/blob/main/packages/utils/src/parse_reply.rs
-    // let data = msg.result.into_result().map_err(StdError::generic_err)?;
-    // Search for the transfer event
-    // If there are multiple transfers, you will need to find the right event to handle
-    // let mint_event = data
-    //     .events
-    //     .iter()
-    //     .find(|e| {
-    //         e.attributes
-    //             .iter()
-    //             .any(|attr| attr.key == "action" && attr.value == "mint")
-    //     })
-    //     .ok_or_else(|| StdError::generic_err(format!("unable to find transfer action")))?;
-    // // // Do whatever you want with the attributes in the transfer event
-    // // // Reference to the full event: https://github.com/CosmWasm/cw-plus/blob/main/contracts/cw20-base/src/contract.rs#L239-L244
-
+fn handle_reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     let job_id = msg.id;
 
     if job_id == 0 {
@@ -100,59 +78,18 @@ fn handle_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
         Ok(Response::new())
     } else {
         let mut renew_info = RENEW_MAP.load(deps.storage, job_id)?;
-        renew_info.status = 999;
+        renew_info.callback_height = env.block.height;
+        
         if msg.result.is_err() {
             renew_info.err_message = Some(msg.result.unwrap_err());
+            renew_info.status = 999;
+        } else {
+            renew_info.status = 1;
         }
         let _ = RENEW_MAP.save(deps.storage, job_id, &renew_info);
 
         Ok(Response::new())
     }
-
-    // Ok(Response::new()
-    //     .add_attribute("reply", "okay")
-    // )
-}
-fn handle_instantiate_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
-    // Handle the msg data and save the contract address
-    // See: https://github.com/CosmWasm/cw-plus/blob/main/packages/utils/src/parse_reply.rs
-    let data = msg.result.into_result().map_err(StdError::generic_err)?;
-    // Search for the transfer event
-    // If there are multiple transfers, you will need to find the right event to handle
-    let mint_event = data
-        .events
-        .iter()
-        .find(|e| {
-            e.attributes
-                .iter()
-                .any(|attr| attr.key == "action" && attr.value == "mint")
-        })
-        .ok_or_else(|| StdError::generic_err(format!("unable to find transfer action")))?;
-    // // Do whatever you want with the attributes in the transfer event
-    // // Reference to the full event: https://github.com/CosmWasm/cw-plus/blob/main/contracts/cw20-base/src/contract.rs#L239-L244
-
-    // let cw721_contract = "archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008";
-    let config = CONFIG.load(deps.storage)?;
-    let cw721_contract = config.cw721_archid_addr;
-
-    let domain_name = mint_event.attributes.iter().find(|attr| attr.key == "token_id").unwrap().value.clone();
-    let receipent = mint_event.attributes.iter().find(|attr| attr.key == "domain_minter").unwrap().value.clone();
-
-    println!("hello {}", receipent);
-    let transfer_msg: archid_token::ExecuteMsg = archid_token::ExecuteMsg::TransferNft { 
-        recipient: receipent.to_string(),
-        token_id: domain_name.into(),
-    };
-
-    let transfer_nft: CosmosMsg = WasmMsg::Execute { 
-        contract_addr: cw721_contract.to_string(),
-        msg: to_json_binary(&transfer_msg)?,
-        funds: vec![] 
-    }.into();
-
-    Ok(Response::new()
-        .add_message(transfer_nft)
-    )
 }
 
 #[cfg_attr(feature = "export", entry_point)]

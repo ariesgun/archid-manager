@@ -1,8 +1,5 @@
-use std::ops::Div;
-
-use cosmwasm_std::{coins, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, Timestamp, Uint128, WasmMsg};
-use cw_utils::Scheduled;
-use crate::{msg::{ExecuteMsg, MsgCancelCallback, MsgRequestCallback, MsgSubscribeToError}, state::{RenewInfo, ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, DEFAULT_ID, JOBS, RENEW_JOBS_MAP, RENEW_MAP, STATE}, ContractError};
+use cosmwasm_std::{coins, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, Timestamp, Uint128, WasmMsg};
+use crate::{msg::{ExecuteMsg, MsgCancelCallback, MsgRequestCallback}, state::{RenewInfo, ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, DEFAULT_ID, JOBS, RENEW_JOBS_MAP, RENEW_MAP, STATE}, ContractError};
 
 pub fn execute_handler(
     deps: DepsMut,
@@ -38,7 +35,6 @@ pub fn mint_domain(deps: DepsMut, info: MessageInfo, _env: Env, domain_name: Str
     let config = CONFIG.load(deps.storage)?;
     let registry_contract = config.archid_registry_addr;
     let cw721_contract = config.cw721_archid_addr;
-    let denom = config.denom;
     
     let funds = &info.funds[0];
 
@@ -249,9 +245,9 @@ pub fn schedule_auto_renew(deps: DepsMut, info: MessageInfo, env: Env, domain_na
 
     let diff_second = Timestamp::from_seconds(expiry_time).minus_seconds(now.seconds()).seconds();
     let diff_block = diff_second.checked_div(5).unwrap();
-    // let block_div = diff_block.checked_div(120_000).unwrap();
-    let block_div = diff_block % 15;
-    let callback_height = block_div * 120_000;
+    let block_div = diff_block.checked_div(u64::from(config.cron_period)).unwrap();
+    // let block_div = diff_block % 15;
+    let callback_height = block_div * u64::from(config.cron_period);
 
     if block_div == 0 {
         return Err(ContractError::ExpiryLong {});
@@ -275,10 +271,10 @@ pub fn schedule_auto_renew(deps: DepsMut, info: MessageInfo, env: Env, domain_na
         amount: coins(funds.amount.into(), denom) 
     }.into();
 
-    // let msg_to_execute = ExecuteMsg::RenewDomain {
-    //     domain_name: domain_name.to_string()
-    // };
-    let msg_to_execute = ExecuteMsg::Increment {  };
+    let msg_to_execute = ExecuteMsg::RenewDomain {
+        domain_name: domain_name.to_string()
+    };
+    // let msg_to_execute = ExecuteMsg::Increment {  };
     let renew_info: RenewInfo = RenewInfo {
         owner: info.sender.to_owned(),
         domain_id: domain_name.to_string(),
@@ -324,12 +320,12 @@ pub fn start_cron_job_callback(deps: DepsMut, info: MessageInfo, env: Env) -> Re
 
     let fee: cosmos_sdk_proto::cosmos::base::v1beta1::Coin = cosmos_sdk_proto::cosmos::base::v1beta1::Coin {
         denom: funds.denom.to_string(),
-        amount: Uint128::new(150_000_000_000_000_000).to_string()
-        // amount: Uint128::new(270_000_000_000_000_000).to_string()
+        amount: Uint128::new(config.cron_fee_amount).to_string()
+        // amount: Uint128::new(150_000_000_000_000_000).to_string()
     };
 
-    // let callback_height = env.block.height + 120_000;
-    let mut callback_height = env.block.height + 12; // Every 1 minute
+    let mut callback_height = env.block.height + u64::from(config.cron_period);
+    // let mut callback_height = env.block.height + 12; // Every 1 minute
 
     let cur_block_id = CUR_BLOCK_ID.load(deps.storage)?;
     let renew_jobs_at_idx: Option<Vec<String>> = RENEW_JOBS_MAP.may_load(deps.storage, cur_block_id)?;
@@ -398,7 +394,7 @@ pub fn stop_cron_job_callback(deps: DepsMut, info: MessageInfo, env: Env) -> Res
     )
 }
 
-pub fn cancel_auto_renew (deps: DepsMut, info: MessageInfo, env: Env, domain_name: String) -> Result<Response, ContractError> {
+pub fn cancel_auto_renew (deps: DepsMut, _info: MessageInfo, env: Env, domain_name: String) -> Result<Response, ContractError> {
 
     let job_id = ACC_JOB_MAP.may_load(deps.storage, domain_name.clone())?;
     if job_id.is_none() {

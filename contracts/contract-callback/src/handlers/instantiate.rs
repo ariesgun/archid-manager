@@ -1,4 +1,4 @@
-use cosmwasm_std::{Binary, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use crate::{msg::InstantiateMsg, state::{Config, State, CONFIG, CUR_BLOCK_ID, JOBS, STATE}, ContractError};
 
 

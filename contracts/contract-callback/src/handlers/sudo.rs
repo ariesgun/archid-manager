@@ -1,6 +1,6 @@
-use cosmwasm_std::{to_json_binary, BankQuery, Binary, Coin, CosmosMsg, DepsMut, Env, Int64, Response, SubMsg, Uint128, WasmMsg};
+use cosmwasm_std::{Binary, CosmosMsg, DepsMut, Env, Response, SubMsg, Uint128, WasmMsg};
 
-use crate::{msg::{ExecuteMsg, MsgRequestCallback, SudoMsg}, state::{RenewInfo, ACC_JOB_MAP, CUR_BLOCK_ID, RENEW_JOBS_MAP, RENEW_MAP, STATE}, ContractError};
+use crate::{msg::{MsgRequestCallback, SudoMsg}, state::{ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, RENEW_JOBS_MAP, RENEW_MAP, STATE}, ContractError};
 use std::u64;
 
 
@@ -17,12 +17,12 @@ pub fn sudo_handler(
 }
 
 pub fn handle_error(
-    deps: DepsMut,
-    env: Env,
-    module_name: String,
-    error_code: u32,
-    input_payload: String,
-    error_message: String,
+    _deps: DepsMut,
+    _env: Env,
+    _module_name: String,
+    _error_code: u32,
+    _input_payload: String,
+    _error_message: String,
 ) -> Result<Response, ContractError> {
 
     Ok(Response::new())
@@ -41,16 +41,16 @@ pub fn handle_callback(deps: DepsMut, env: Env, job_id: u64) -> Result<Response,
           Ok(state)
         })?;
 
+        let config = CONFIG.load(deps.storage)?;
+
         let fee = cosmos_sdk_proto::cosmos::base::v1beta1::Coin {
             denom: "aconst".to_string(),
-            amount: Uint128::new(150_000_000_000_000_000).to_string()
-            // amount: Uint128::new(270_000_000_000_000_000).to_string()
+            amount: Uint128::new(config.cron_fee_amount).to_string(),
         };    
         let regsiter_msg = MsgRequestCallback {
             sender: env.contract.address.to_string(),
             job_id: job_id.clone(),
-            callback_height: env.block.height + 12,
-            // callback_height: env.block.height + 120_000,
+            callback_height: env.block.height + u64::from(config.cron_period),
             contract_address: env.contract.address.to_string(),
             fees: Some(fee)
         };
