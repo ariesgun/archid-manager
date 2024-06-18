@@ -1,6 +1,6 @@
 use cosmwasm_std::{Binary, CosmosMsg, DepsMut, Env, Response, SubMsg, Uint128, WasmMsg};
 
-use crate::{msg::{MsgRequestCallback, SudoMsg}, state::{ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, RENEW_JOBS_MAP, RENEW_MAP, STATE}, ContractError};
+use crate::{msg::{AccountRegistered, ICAResponse, MsgRequestCallback, SudoMsg}, state::{ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, ICA_STATE, RENEW_JOBS_MAP, RENEW_MAP, STATE}, ContractError};
 use std::u64;
 
 
@@ -11,20 +11,35 @@ pub fn sudo_handler(
 ) -> Result<Response, ContractError> {
   match msg {
     SudoMsg::Callback { job_id } => handle_callback(deps, env, job_id),
+    SudoMsg::Ica { account_registered, tx_executed } => handle_ica(deps, env, account_registered, tx_executed),
     SudoMsg::Error { module_name, error_code, contract_address: _, input_payload, error_message } 
         => handle_error(deps, env, module_name, error_code, input_payload, error_message),
   }
 }
 
 pub fn handle_error(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
-    _module_name: String,
-    _error_code: u32,
+    module_name: String,
+    error_code: u32,
     _input_payload: String,
-    _error_message: String,
+    error_message: String,
 ) -> Result<Response, ContractError> {
 
+    let _ = ICA_STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
+        if module_name == "cwica" {
+            if error_code == 1 { // packet timeout error
+            state.timeout = true;
+            }
+            if error_code == 2 { // submittx execution error
+            state.errors = error_message;
+            }
+            else {
+            // unknown error
+            }
+        }
+        Ok(state)
+    });
     Ok(Response::new())
 }
 
@@ -150,4 +165,23 @@ pub fn handle_renew_callback(deps: DepsMut, env: Env, job_id: u64) -> Result<Res
     } else {
         Ok(Response::new())
     }
+}
+
+pub fn handle_ica(
+    deps: DepsMut,
+    env: Env, 
+    account_registered_option: Option<AccountRegistered>,
+    response_option: Option<ICAResponse>) -> Result<Response, ContractError> 
+{
+    let _ = ICA_STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
+        if account_registered_option.is_some() {
+            let account_registered = account_registered_option.unwrap();
+            state.ica_address = account_registered.counterparty_address.clone();
+        } 
+        if response_option.is_some() {
+            state.voted = true;
+        }
+        Ok(state)
+    });
+    Ok(Response::new())
 }

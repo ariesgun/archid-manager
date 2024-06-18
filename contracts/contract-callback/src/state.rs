@@ -36,6 +36,17 @@ pub struct RenewInfo {
     pub err_message: Option<String>
 }
 
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct IcaState {
+    pub owner: Addr,
+    pub connection_id: String,
+    pub ica_address: String,
+    pub voted: bool,
+    pub errors: String,
+    pub timeout: bool
+}
+
 pub const STATE: Item<State> = Item::new("state");
 pub const CONFIG: Item<Config> = Item::new("config");
 
@@ -47,3 +58,4 @@ pub const RENEW_JOBS_MAP: Map<u64, Vec<String>> = Map::new("renew_jobs_map");
 pub const CUR_BLOCK_ID: Item<u64> = Item::new("cur_block_id");
 
 pub const DEFAULT_ID: Map<Addr, String> = Map::new("default_id");
+pub const ICA_STATE: Item<IcaState> = Item::new("ica_state");

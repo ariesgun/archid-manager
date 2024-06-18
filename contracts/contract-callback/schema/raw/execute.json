@@ -171,6 +171,63 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "register_ica"
+      ],
+      "properties": {
+        "register_ica": {
+          "type": "object",
+          "required": [
+            "connection_id"
+          ],
+          "properties": {
+            "connection_id": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "vote"
+      ],
+      "properties": {
+        "vote": {
+          "type": "object",
+          "required": [
+            "connection_id",
+            "option",
+            "proposal_id",
+            "tiny_timeout"
+          ],
+          "properties": {
+            "connection_id": {
+              "type": "string"
+            },
+            "option": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "proposal_id": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "tiny_timeout": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   ]
 }

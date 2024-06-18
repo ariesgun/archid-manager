@@ -1,5 +1,6 @@
-use cosmwasm_std::{coins, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, Timestamp, Uint128, WasmMsg};
-use crate::{msg::{ExecuteMsg, MsgCancelCallback, MsgRequestCallback}, state::{RenewInfo, ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, DEFAULT_ID, JOBS, RENEW_JOBS_MAP, RENEW_MAP, STATE}, ContractError};
+use cosmwasm_std::{coins, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, Timestamp, Uint128, WasmMsg};
+use prost::Message;
+use crate::{msg::{ExecuteMsg, MsgCancelCallback, MsgRegisterInterchainAccount, MsgRequestCallback, MsgSendTx, MsgVote}, state::{RenewInfo, ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, DEFAULT_ID, ICA_STATE, JOBS, RENEW_JOBS_MAP, RENEW_MAP, STATE}, ContractError};
 
 pub fn execute_handler(
     deps: DepsMut,
@@ -18,6 +19,13 @@ pub fn execute_handler(
         ExecuteMsg::StopCronJob {} => stop_cron_job_callback(deps, info, env),
         ExecuteMsg::Deposit {} => deposit_funds(deps, info, env),
         ExecuteMsg::Withdraw {} => withdraw(deps, info, env),
+        ExecuteMsg::RegisterIca {connection_id} => register_ica(deps, info, env, connection_id),
+        ExecuteMsg::Vote {
+            proposal_id,
+            option,
+            connection_id,
+            tiny_timeout,
+        } => vote(deps.as_ref(), env, proposal_id, option, connection_id, tiny_timeout),
     }
 }
 
@@ -345,7 +353,7 @@ pub fn start_cron_job_callback(deps: DepsMut, info: MessageInfo, env: Env) -> Re
         value: Binary::from(::cosmos_sdk_proto::traits::Message::encode_to_vec(&regsiter_msg)),
     };
 
-    STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
+    STATE.update(deps.storage, |mut state: crate::state::State| -> Result<_, ContractError> {
         state.status = 1;
         state.callback_height = callback_height;
         Ok(state)
@@ -401,25 +409,27 @@ pub fn cancel_auto_renew (deps: DepsMut, _info: MessageInfo, env: Env, domain_na
         return Err(ContractError::NotFoundJobId {});
     }
 
-    let renew_info = RENEW_MAP.load(deps.storage, job_id.unwrap())?;
-    let contract_address = env.contract.address.to_string();
-    let cancel_msg = MsgCancelCallback {
-        sender: contract_address.to_string(),
-        job_id: job_id.unwrap().clone(),
-        callback_height: renew_info.callback_height.clone(),
-        contract_address: contract_address.clone()
-    };
-    let cancel_stargate_msg = CosmosMsg::Stargate {
-        type_url: "/archway.callback.v1.MsgCancelCallback".to_string(),
-        value: Binary::from(::cosmos_sdk_proto::traits::Message::encode_to_vec(&cancel_msg)),
-    };
+    let mut renew_info = RENEW_MAP.load(deps.storage, job_id.unwrap())?;
+    renew_info.status = 2; // Cancelled
+    let _ = RENEW_MAP.save(deps.storage, job_id.unwrap(), &renew_info);
 
-    let messages = vec![cancel_stargate_msg];
+    let data = RENEW_JOBS_MAP.may_load(deps.storage, renew_info.block_idx)?;
+    if data.is_none() {
+        return Err(ContractError::NotFoundJobId {});
+    } else {
+        let mut new_data = data.unwrap();
+        let index = new_data.iter().position(|x| *x == domain_name).unwrap();
+        new_data.remove(index);
+        new_data.append(&mut vec![domain_name.clone()]);
+
+        let _ = RENEW_JOBS_MAP.save(deps.storage, renew_info.block_idx, &new_data);
+    }
+
+    let _ = RENEW_MAP.save(deps.storage, job_id.unwrap(), &renew_info);
 
     Ok(Response::new()
         .add_attribute("action", "cancel_auto_renew")
         .add_attribute("domain", domain_name)
-        .add_messages(messages)
     )
 }
 
@@ -462,4 +472,62 @@ pub fn withdraw(deps: DepsMut, info: MessageInfo, env: Env) -> Result<Response, 
         .add_attribute("action", "withdraw")
         .add_message(withdraw_msg)
     )
+}
+
+pub fn register_ica(deps: DepsMut, info: MessageInfo, env: Env, connection_id: String) -> Result<Response, ContractError>
+{
+    let from_address = env.contract.address.to_string();
+    let state: crate::state::IcaState = ICA_STATE.load(deps.storage)?;
+    // let connection_id = state.connection_id;
+    let regsiter_msg = MsgRegisterInterchainAccount {
+        contract_address: from_address.clone(),
+        connection_id: connection_id.clone(),
+    };
+    let register_stargate_msg = CosmosMsg::Stargate {
+        type_url: "/archway.cwica.v1.MsgRegisterInterchainAccount".to_string(),
+        value: Binary::from(prost::Message::encode_to_vec(&regsiter_msg)),
+    };
+    Ok(Response::new()
+        .add_attribute("action", "register")
+        .add_attribute("account_owner", from_address)
+        .add_attribute("connection_id", connection_id)
+        .add_message(register_stargate_msg))
+}
+
+const DEFAULT_TIMEOUT_SECONDS: u64 = 60 * 60 * 24 * 7 * 2;
+
+pub fn vote(deps: Deps, env: Env, proposal_id: u64, option: i32, connection_id: String, tiny_timeout: bool) -> Result<Response, ContractError> 
+{
+    let state = ICA_STATE.load(deps.storage)?;
+    // let connection_id = state.connection_id;
+    let from_address = env.contract.address.to_string();
+    let ica_address = state.ica_address;
+    let vote_msg = MsgVote {
+      proposal_id: proposal_id,
+      voter: ica_address.clone(),
+      option: option,
+    };
+    let vote_msg_stargate_msg = prost_types::Any {
+      type_url: "/cosmos.gov.v1.MsgVote".to_string(),
+      value: vote_msg.encode_to_vec(),
+    };
+    let timeout = if tiny_timeout {
+      1
+    } else {
+      DEFAULT_TIMEOUT_SECONDS
+    };
+    let sendtx_msg = MsgSendTx {
+      contract_address: from_address.clone(),
+      connection_id: connection_id.clone(),
+      msgs: vec![vote_msg_stargate_msg],
+      memo: "sent from contract".to_string(),
+      timeout: timeout,
+    };
+    let sendtx_stargate_msg = CosmosMsg::Stargate {
+      type_url: "/archway.cwica.v1.MsgSendTx".to_string(),
+      value: Binary::from(prost::Message::encode_to_vec(&sendtx_msg)),
+    };
+    Ok(Response::new()
+      .add_attribute("action", "send")
+      .add_message(sendtx_stargate_msg))
 }

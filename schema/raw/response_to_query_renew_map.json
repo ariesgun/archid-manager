@@ -48,6 +48,12 @@
         "domain_id": {
           "type": "string"
         },
+        "err_message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "execute_msg": {
           "$ref": "#/definitions/Binary"
         },

@@ -1,7 +1,7 @@
 use cosmwasm_std::{to_json_binary, Addr, Binary, Deps, Env, StdResult};
 use crate::{
-    msg::{DomainDefaultResponse, GetCountResponse, QueryErrorsRequest, QueryErrorsResponse, QueryMsg, RenewJobsMapResponse, RenewMapResponse},
-    state::{ACC_JOB_MAP, DEFAULT_ID, RENEW_JOBS_MAP, RENEW_MAP, STATE}
+    msg::{DomainDefaultResponse, GetCountResponse, GetIcaStateResponse, QueryErrorsRequest, QueryErrorsResponse, QueryMsg, RenewJobsMapResponse, RenewMapResponse},
+    state::{ACC_JOB_MAP, DEFAULT_ID, ICA_STATE, RENEW_JOBS_MAP, RENEW_MAP, STATE}
 };
 
 
@@ -12,6 +12,7 @@ pub fn query_handler(
 {
     match msg {
         QueryMsg::GetCount {} => to_json_binary(&count(deps)?),
+        QueryMsg::GetIcaState {} => to_json_binary(&ica_state(deps)?),
         QueryMsg::QueryErrors {} => to_json_binary(&query_cw_errors(deps, env)?),
         QueryMsg::QueryDomainDefault {address} => to_json_binary(&query_domain_default(deps, address)?),
         QueryMsg::QueryRenewMap { domain_name} => to_json_binary(&query_renew_map(deps, env, domain_name)?),
@@ -22,6 +23,11 @@ pub fn query_handler(
 pub fn count(deps: Deps) -> StdResult<GetCountResponse> {
     let state = STATE.load(deps.storage)?;
     Ok(GetCountResponse { state })
+}
+
+pub fn ica_state(deps: Deps) -> StdResult<GetIcaStateResponse> {
+    let state = ICA_STATE.load(deps.storage)?;
+    Ok(GetIcaStateResponse { state })
 }
 
 pub fn query_domain_default(deps: Deps, address: Addr) -> StdResult<DomainDefaultResponse> {

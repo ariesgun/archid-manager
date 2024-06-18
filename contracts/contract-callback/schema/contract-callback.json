@@ -209,6 +209,63 @@
           }
         },
         "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "register_ica"
+        ],
+        "properties": {
+          "register_ica": {
+            "type": "object",
+            "required": [
+              "connection_id"
+            ],
+            "properties": {
+              "connection_id": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "vote"
+        ],
+        "properties": {
+          "vote": {
+            "type": "object",
+            "required": [
+              "connection_id",
+              "option",
+              "proposal_id",
+              "tiny_timeout"
+            ],
+            "properties": {
+              "connection_id": {
+                "type": "string"
+              },
+              "option": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "proposal_id": {
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 0.0
+              },
+              "tiny_timeout": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     ]
   },
@@ -223,6 +280,19 @@
         ],
         "properties": {
           "get_count": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "get_ica_state"
+        ],
+        "properties": {
+          "get_ica_state": {
             "type": "object",
             "additionalProperties": false
           }
@@ -368,6 +438,57 @@
               "type": "integer",
               "format": "uint8",
               "minimum": 0.0
+            }
+          }
+        }
+      }
+    },
+    "get_ica_state": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GetIcaStateResponse",
+      "type": "object",
+      "required": [
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/IcaState"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "Addr": {
+          "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+          "type": "string"
+        },
+        "IcaState": {
+          "type": "object",
+          "required": [
+            "connection_id",
+            "errors",
+            "ica_address",
+            "owner",
+            "timeout",
+            "voted"
+          ],
+          "properties": {
+            "connection_id": {
+              "type": "string"
+            },
+            "errors": {
+              "type": "string"
+            },
+            "ica_address": {
+              "type": "string"
+            },
+            "owner": {
+              "$ref": "#/definitions/Addr"
+            },
+            "timeout": {
+              "type": "boolean"
+            },
+            "voted": {
+              "type": "boolean"
             }
           }
         }

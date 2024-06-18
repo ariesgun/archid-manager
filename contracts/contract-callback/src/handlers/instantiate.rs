@@ -1,5 +1,5 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
-use crate::{msg::InstantiateMsg, state::{Config, State, CONFIG, CUR_BLOCK_ID, JOBS, STATE}, ContractError};
+use crate::{msg::InstantiateMsg, state::{Config, IcaState, State, CONFIG, CUR_BLOCK_ID, ICA_STATE, JOBS, STATE}, ContractError};
 
 
 pub fn instantiate_handler(
@@ -16,6 +16,15 @@ pub fn instantiate_handler(
         callback_height: 0,
     };
     STATE.save(deps.storage, &state)?;
+    let ica_state = IcaState {
+        owner: info.sender.clone(),
+        connection_id: "channel-99".to_string(),
+        ica_address: "".to_string(),
+        voted: false,
+        errors: "".to_string(),
+        timeout: false,
+    };
+    ICA_STATE.save(deps.storage, &ica_state)?;
     let cur_job_id = 2;
     CUR_BLOCK_ID.save(deps.storage, &cur_job_id)?;
     CONFIG.save(

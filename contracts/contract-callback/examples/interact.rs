@@ -171,6 +171,15 @@ pub fn main() -> anyhow::Result<()> {
     println!("Res {:?}", res);
 
 
+    let res = counter.register_ica("connection-81".to_string())?;
+    println!("Res {:?}", res);
+
+    let res = counter.get_ica_state()?;
+    println!("Res {:?}", res);
+
+
+
+
     // let res = counter.set_default("testdomainx6.arch".to_string())?;
 
     // let default_domain = counter.query_domain_default(chain.sender())?;
