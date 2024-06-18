@@ -63,7 +63,7 @@ pub fn handle_callback(deps: DepsMut, env: Env, job_id: u64) -> Result<Response,
         // Renew callback
         let fee2 = cosmos_sdk_proto::cosmos::base::v1beta1::Coin {
             denom: "aconst".to_string(),
-            amount: Uint128::new(150_000_000_000_000_000).to_string()
+            amount: Uint128::new(150_000_000_000_000_000).to_string() // Gas fee
         };    
         let register_callback_msg = MsgRequestCallback {
             sender: env.contract.address.to_string(),
@@ -117,7 +117,7 @@ pub fn handle_renew_callback(deps: DepsMut, env: Env, job_id: u64) -> Result<Res
 
         let fee = cosmos_sdk_proto::cosmos::base::v1beta1::Coin {
             denom: "aconst".to_string(),
-            amount: Uint128::new(150_000_000_000_000_000).to_string()
+            amount: Uint128::new(150_000_000_000_000_000).to_string() // Gas fee
         };    
         let regsiter_msg = MsgRequestCallback {
             sender: env.contract.address.to_string(),

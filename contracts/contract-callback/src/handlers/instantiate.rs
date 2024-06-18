@@ -28,7 +28,8 @@ pub fn instantiate_handler(
             start_block: env.block.height,
             cron_period: 120_000, // 7 days
             cron_fee_amount: 270_000_000_000_000_000, // reservation fee
-            cost_per_year: 250_000_000_000_000_000_u128,
+            cost_per_year: msg.cost_per_year,
+            gas_fee: 150_000_000_000_000_000,
         }
     )?;
     

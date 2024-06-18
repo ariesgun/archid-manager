@@ -23,6 +23,7 @@ pub struct Config {
     pub cron_period: u32,
     pub cron_fee_amount: u128,
     pub cost_per_year: u128,
+    pub gas_fee: u128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

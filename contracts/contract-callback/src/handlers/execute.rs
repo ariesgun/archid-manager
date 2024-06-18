@@ -1,4 +1,4 @@
-use cosmwasm_std::{coins, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, Timestamp, Uint128, WasmMsg};
+use cosmwasm_std::{coin, coins, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, Timestamp, Uint128, WasmMsg};
 use prost::Message;
 use crate::{msg::{ExecuteMsg, MsgCancelCallback, MsgRequestCallback}, 
             state::{RenewInfo, ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, DEFAULT_ID, JOBS, RENEW_JOBS_MAP, RENEW_MAP, STATE}, 
@@ -212,6 +212,7 @@ pub fn schedule_auto_renew(deps: DepsMut, info: MessageInfo, env: Env, domain_na
 {
     let config = CONFIG.load(deps.storage)?;
     let cw721_contract = config.cw721_archid_addr;
+    let registry_contract = config.archid_registry_addr;
     let denom = config.denom;
     
     let funds = &info.funds[0];
@@ -231,16 +232,25 @@ pub fn schedule_auto_renew(deps: DepsMut, info: MessageInfo, env: Env, domain_na
     if res.is_err() {
         return Err(ContractError::Unapproved {});
     }
+
+    // Check funds
+    let res = cw_utils::must_pay(&info, &denom)?;
+    let renew_fee = config.cost_per_year + config.gas_fee;
+    let registration: u64 =
+        u64::try_from(((res.checked_div(renew_fee.into())).unwrap()).u128()).unwrap();
+    if registration < 1 {
+        return Err(ContractError::InvalidPayment { amount: res });
+    }
     
     // Check time
     let cur_block_id = CUR_BLOCK_ID.load(deps.storage)?;
-    let res : cw721_updatable::NftInfoResponse<archid_token::Metadata> = 
+    let res : archid_registry::msg::ResolveRecordResponse = 
         deps.querier.query_wasm_smart(
-            cw721_contract.to_string(),
-            &cw721_archid::msg::QueryMsg::<archid_token::Extension>::NftInfo { token_id: nft_id.clone() 
+            registry_contract.to_string(),
+            &archid_registry::msg::QueryMsg::ResolveRecord { name: nft_id.clone() 
         }
     )?;
-    let expiry_time = res.extension.expiry.unwrap();
+    let expiry_time = res.expiration;
     let now = env.block.time;
     
     if expiry_time < now.seconds() {
@@ -250,7 +260,6 @@ pub fn schedule_auto_renew(deps: DepsMut, info: MessageInfo, env: Env, domain_na
     let diff_second = Timestamp::from_seconds(expiry_time).minus_seconds(now.seconds()).seconds();
     let diff_block = diff_second.checked_div(5).unwrap();
     let block_div = diff_block.checked_div(u64::from(config.cron_period)).unwrap();
-    // let block_div = diff_block % 15;
     let callback_height = block_div * u64::from(config.cron_period);
 
     if block_div == 0 {
@@ -290,9 +299,10 @@ pub fn schedule_auto_renew(deps: DepsMut, info: MessageInfo, env: Env, domain_na
     };
 
     let job_id = JOBS.load(deps.storage)?;
+    let _ = RENEW_MAP.save(deps.storage, job_id, &renew_info);
+    let _ = ACC_JOB_MAP.save(deps.storage, domain_name.to_string(), &job_id);
+
     let next_job_id = job_id + 1;
-    let _ = RENEW_MAP.save(deps.storage, next_job_id, &renew_info);
-    let _ = ACC_JOB_MAP.save(deps.storage, domain_name.to_string(), &next_job_id);
     let _ = JOBS.save(deps.storage, &next_job_id);
 
     let messages = vec![transfer_fee_msg];
@@ -325,7 +335,6 @@ pub fn start_cron_job_callback(deps: DepsMut, info: MessageInfo, env: Env) -> Re
     let fee: cosmos_sdk_proto::cosmos::base::v1beta1::Coin = cosmos_sdk_proto::cosmos::base::v1beta1::Coin {
         denom: funds.denom.to_string(),
         amount: Uint128::new(config.cron_fee_amount).to_string()
-        // amount: Uint128::new(150_000_000_000_000_000).to_string()
     };
 
     let mut callback_height = env.block.height + u64::from(config.cron_period);
@@ -405,25 +414,36 @@ pub fn cancel_auto_renew (deps: DepsMut, _info: MessageInfo, env: Env, domain_na
         return Err(ContractError::NotFoundJobId {});
     }
 
-    let renew_info = RENEW_MAP.load(deps.storage, job_id.unwrap())?;
-    let contract_address = env.contract.address.to_string();
-    let cancel_msg = MsgCancelCallback {
-        sender: contract_address.to_string(),
-        job_id: job_id.unwrap().clone(),
-        callback_height: renew_info.callback_height.clone(),
-        contract_address: contract_address.clone()
-    };
-    let cancel_stargate_msg = CosmosMsg::Stargate {
-        type_url: "/archway.callback.v1.MsgCancelCallback".to_string(),
-        value: Binary::from(::cosmos_sdk_proto::traits::Message::encode_to_vec(&cancel_msg)),
-    };
+    let mut renew_info = RENEW_MAP.load(deps.storage, job_id.unwrap())?;
+    if renew_info.status != 0 { // Pending
+        return Err(ContractError::NotFoundJobId {});
+    }
 
-    let messages = vec![cancel_stargate_msg];
+    let data = RENEW_JOBS_MAP.may_load(deps.storage, renew_info.block_idx)?;
+    if data.is_some() {
+        let mut new_data = data.unwrap();
+        let index = new_data.iter().position(|x: &String| *x == domain_name).unwrap();
+        new_data.remove(index);
 
+        let _ = RENEW_JOBS_MAP.save(deps.storage, renew_info.block_idx, &new_data);
+    } else {
+        return Err(ContractError::NotFoundJobId {});
+    }
+
+    renew_info.status = 2; // Cancelled
+    let _ = RENEW_MAP.save(deps.storage, job_id.unwrap(), &renew_info);
+
+    // Transfer fund back
+    let config = CONFIG.load(deps.storage)?;
+    let refund_msg : CosmosMsg = BankMsg::Send {
+        to_address: renew_info.owner.into_string(),
+        amount: vec![coin(config.cost_per_year, config.denom)]
+    }.into();
+    
     Ok(Response::new()
         .add_attribute("action", "cancel_auto_renew")
         .add_attribute("domain", domain_name)
-        .add_messages(messages)
+        .add_message(refund_msg)
     )
 }
 

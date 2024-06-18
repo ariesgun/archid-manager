@@ -237,6 +237,122 @@ fn renew_domain() -> anyhow::Result<()> {
 }
 
 #[test]
+fn schedule_and_cancel_domain_renewal() -> anyhow::Result<()> {
+
+    let mock = MockBech32::new("mock");
+    let user1 = mock.addr_make("user1");
+    let user2 = mock.addr_make("user2");
+
+    mock.add_balance(
+        &user1, 
+        coins(3_000_000_000_000_000_000, "aarch".to_string()))?;
+    mock.add_balance(
+        &user2, 
+        coins(3_000_000_000_000_000_000, "aarch".to_string()))?;
+
+    let (contract, cw721_archid_addr, archid_registry_addr)  = setup(mock.clone())?;
+
+    contract
+        .call_as(&user1)
+        .mint_domain(
+            "domain1".to_string(),
+            &[coin(1_000_000_000_000_000_000, "aarch".to_string())]
+        )?;
+    contract
+        .call_as(&user2)
+        .mint_domain(
+            "domain2".to_string(),
+            &[coin(1_000_000_000_000_000_000, "aarch".to_string())]
+        )?;
+
+    // Approve NFTs
+    let approve_msg: cw721_archid::ExecuteMsg<Option<Empty>, Empty> = cw721_archid::msg::ExecuteMsg::<Option<Empty>, Empty>::Approve {
+            spender: contract.addr_str()?.to_string(),
+            token_id: "domain1.arch".to_string(),
+            expires: None
+        };
+    let _ = mock
+        .call_as(&user1)
+        .execute(
+        &approve_msg,
+        &[],
+        &cw721_archid_addr,
+    )?;
+
+    let approve_msg: cw721_archid::ExecuteMsg<Option<Empty>, Empty> = cw721_archid::msg::ExecuteMsg::<Option<Empty>, Empty>::Approve {
+            spender: contract.addr_str()?.to_string(),
+            token_id: "domain2.arch".to_string(),
+            expires: None
+        };
+    let _ = mock
+        .call_as(&user2)
+        .execute(
+        &approve_msg,
+        &[],
+        &cw721_archid_addr,
+    )?;
+
+    // Schedule renew
+    contract
+        .call_as(&user1)
+        .schedule_auto_renew(
+            "domain1".to_string(),
+            &[coin(1_150_000_000_000_000_000, "aarch".to_string())]
+        )?;
+
+    contract
+        .call_as(&user2)
+        .schedule_auto_renew(
+            "domain2".to_string(),
+            &[coin(1_150_000_000_000_000_000, "aarch".to_string())]
+        )?;
+
+    let res: archid_registry::msg::ResolveRecordResponse = mock.wasm_querier().smart_query(
+        archid_registry_addr.clone(),
+        &archid_registry::msg::QueryMsg::ResolveRecord { name: "domain1".to_string() + ".arch" }
+    )?;
+    assert_eq!(res.address, Some(user1.to_string()));
+    assert_eq!(res.expiration, 1602555819);
+
+    let resolve_info: contract_callback::msg::RenewMapResponse = mock.wasm_querier().smart_query(
+        contract.address()?,
+        &QueryMsg::QueryRenewMap { domain_name: "domain1".to_string() }
+    )?;
+    assert_eq!(resolve_info.renew_info.as_ref().unwrap().domain_id, "domain1");
+    assert_eq!(resolve_info.renew_info.as_ref().unwrap().callback_height, 6120000);
+    assert_eq!(resolve_info.renew_info.as_ref().unwrap().block_idx, 53);
+
+    let resolve_info: contract_callback::msg::RenewMapResponse = mock.wasm_querier().smart_query(
+        contract.address()?,
+        &QueryMsg::QueryRenewMap { domain_name: "domain2".to_string() }
+    )?;
+    assert_eq!(resolve_info.renew_info.as_ref().unwrap().domain_id, "domain2");
+    assert_eq!(resolve_info.renew_info.as_ref().unwrap().callback_height, 6120000);
+    assert_eq!(resolve_info.renew_info.as_ref().unwrap().block_idx, 53);
+
+    let resolve_info: contract_callback::msg::RenewJobsMapResponse = mock.wasm_querier().smart_query(
+        contract.address()?,
+        &QueryMsg::QueryRenewJobsMap { block_id: 53 }
+    )?;
+    assert_eq!(resolve_info.renew_jobs.len(), 2);
+
+    // Cancel auto-renewal
+    contract
+        .call_as(&user2)
+        .cancel_auto_renew("domain2".to_string())?;
+    let resolve_info: contract_callback::msg::RenewJobsMapResponse = mock.wasm_querier().smart_query(
+        contract.address()?,
+        &QueryMsg::QueryRenewJobsMap { block_id: 53 }
+    )?;
+    assert_eq!(resolve_info.renew_jobs.len(), 1);
+
+    let balance = mock.balance(user2, Some("aarch".to_string()))?;
+    assert_eq!(balance, coins(1_850_000_000_000_000_000, "aarch".to_string()));
+    
+    Ok(())
+}
+
+#[test]
 fn deposit_unauthorized() -> anyhow::Result<()> {
     let mock = MockBech32::new("mock");
     let user1 = mock.addr_make("user1");
@@ -394,7 +510,7 @@ fn setup(mock: MockBech32) -> anyhow::Result<(AppContract<MockBech32>, Addr, Add
         cw721_archid_addr: cw721_archid_addr.clone(),
         archid_registry_addr: archid_registry_addr.clone(),
         denom: "aarch".to_string(),
-        cost_per_year: 250_000_000_000_000_000_u128,
+        cost_per_year: 1_000_000_000_000_000_000_u128,
     };
     let init_resp = contract.instantiate(
         &msg, 
