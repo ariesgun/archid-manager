@@ -4,6 +4,7 @@
   "type": "object",
   "required": [
     "archid_registry_addr",
+    "cost_per_year",
     "count",
     "cw721_archid_addr",
     "denom"
@@ -11,6 +12,11 @@
   "properties": {
     "archid_registry_addr": {
       "$ref": "#/definitions/Addr"
+    },
+    "cost_per_year": {
+      "type": "integer",
+      "format": "uint128",
+      "minimum": 0.0
     },
     "count": {
       "type": "integer",
