@@ -18,9 +18,7 @@
         "$ref": "#/definitions/Addr"
       },
       "cost_per_year": {
-        "type": "integer",
-        "format": "uint128",
-        "minimum": 0.0
+        "type": "string"
       },
       "count": {
         "type": "integer",

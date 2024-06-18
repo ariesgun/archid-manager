@@ -1,4 +1,6 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
+use std::str::FromStr;
+
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use crate::{msg::InstantiateMsg, state::{Config, State, CONFIG, CUR_BLOCK_ID, JOBS, STATE}, ContractError};
 
 
@@ -28,7 +30,7 @@ pub fn instantiate_handler(
             start_block: env.block.height,
             cron_period: 120_000, // 7 days
             cron_fee_amount: 270_000_000_000_000_000, // reservation fee
-            cost_per_year: msg.cost_per_year,
+            cost_per_year: Uint128::from_str(msg.cost_per_year.as_str())?.u128(),
             gas_fee: 150_000_000_000_000_000,
         }
     )?;

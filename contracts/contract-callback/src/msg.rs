@@ -9,7 +9,7 @@ pub struct InstantiateMsg {
     pub cw721_archid_addr: Addr,
     pub archid_registry_addr: Addr,
     pub denom: String,
-    pub cost_per_year: u128,
+    pub cost_per_year: String,
 }
 
 #[cw_serde]

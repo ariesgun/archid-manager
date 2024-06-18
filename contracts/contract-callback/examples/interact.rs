@@ -27,7 +27,7 @@ pub fn main() -> anyhow::Result<()> {
     // counter.reset(1);
     println!("Count {:?}", counter.get_count()?);
 
-    let domain_name = "testdomainx11";
+    let domain_name = "testdomainx12";
 
     // let res = counter.mint_domain(
     //     domain_name.to_string(),
@@ -47,18 +47,16 @@ pub fn main() -> anyhow::Result<()> {
 
     let nft_id = domain_name.to_string() + ".arch";
 
-    // let approve_msg: cw721_archid::ExecuteMsg<Option<Empty>, Empty> = cw721_archid::msg::ExecuteMsg::<Option<Empty>, Empty>::Approve {
-    //     spender: counter.addr_str()?.to_string(),
-    //     token_id: nft_id.clone(),
-    //     expires: None
-    // };
-
-    // let res = chain.execute(
-    //     &approve_msg,
-    //     &[], 
-    //     &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
-    // )?;
-    // println!("{:?}", res);
+    let approve_msg: cw721_archid::ExecuteMsg<Option<Empty>, Empty> = cw721_archid::msg::ExecuteMsg::<Option<Empty>, Empty>::Approve {
+        spender: counter.addr_str()?.to_string(),
+        token_id: nft_id.clone(),
+        expires: None
+    };
+    let res = chain.execute(
+        &approve_msg,
+        &[], 
+        &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
+    )?;
 
     // let res : Result<cw721_updatable::ApprovalResponse, DaemonError> = chain.wasm_querier().smart_query(
     //     &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
@@ -73,9 +71,9 @@ pub fn main() -> anyhow::Result<()> {
     )?;
     println!("{:?}", res);
 
-    let res : cw721_updatable::OwnerOfResponse = chain.wasm_querier().smart_query(
+    let res : cw721_updatable::TokensResponse = chain.wasm_querier().smart_query(
         &Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
-        &cw721_archid::msg::QueryMsg::<archid_token::Extension>::OwnerOf { token_id: nft_id.clone(), include_expired: None }
+        &cw721_archid::msg::QueryMsg::<archid_token::Extension>::Tokens { owner: chain.sender().to_string(), start_after: None, limit: None }
     )?;
     println!("{:?}", res);
 
@@ -84,12 +82,27 @@ pub fn main() -> anyhow::Result<()> {
         &archid_registry::msg::QueryMsg::ResolveRecord { name: nft_id.clone() }
     )?;
     println!("{:?}", res);
-
-    let res: Config = chain.wasm_querier().smart_query(
+    let res: archid_registry::msg::ResolveRecordResponse = chain.wasm_querier().smart_query(
         &Addr::unchecked("archway1lr8rstt40s697hqpedv2nvt27f4cuccqwvly9gnvuszxmcevrlns60xw4r"),
-        &archid_registry::msg::QueryMsg::Config {}
+        &archid_registry::msg::QueryMsg::ResolveRecord { name: "testdomainy1.arch".to_string() }
     )?;
     println!("{:?}", res);
+    let res: archid_registry::msg::ResolveRecordResponse = chain.wasm_querier().smart_query(
+        &Addr::unchecked("archway1lr8rstt40s697hqpedv2nvt27f4cuccqwvly9gnvuszxmcevrlns60xw4r"),
+        &archid_registry::msg::QueryMsg::ResolveRecord { name: "testdomainx11.arch".to_string() }
+    )?;
+    println!("{:?}", res);
+    let res: archid_registry::msg::ResolveRecordResponse = chain.wasm_querier().smart_query(
+        &Addr::unchecked("archway1lr8rstt40s697hqpedv2nvt27f4cuccqwvly9gnvuszxmcevrlns60xw4r"),
+        &archid_registry::msg::QueryMsg::ResolveRecord { name: "testdomainx12.arch".to_string() }
+    )?;
+    println!("{:?}", res);
+
+    // let res: Config = chain.wasm_querier().smart_query(
+    //     &Addr::unchecked("archway1lr8rstt40s697hqpedv2nvt27f4cuccqwvly9gnvuszxmcevrlns60xw4r"),
+    //     &archid_registry::msg::QueryMsg::Config {}
+    // )?;
+    // println!("{:?}", res);
 
     // // Renew domain
     // let res = counter.renew_domain(
@@ -107,14 +120,14 @@ pub fn main() -> anyhow::Result<()> {
     // )?;
     // println!("{:?}", res);
 
-    // let res = counter.schedule_auto_renew( 
-    //     domain_name.to_string(), 
-    //     &[Coin {
-    //         amount: Uint128::new(0_400_000_000_000_000_000),
-    //         denom: "aconst".to_string()
-    //     }]
-    // );
-    // println!("{:?}", res);
+    let res = counter.schedule_auto_renew( 
+        domain_name.to_string(), 
+        &[Coin {
+            amount: Uint128::new(0_400_000_000_000_000_000),
+            denom: "aconst".to_string()
+        }]
+    );
+    println!("{:?}", res);
 
     // let res = counter.schedule_auto_renew( 
     //     domain_name.to_string(), 
@@ -125,11 +138,15 @@ pub fn main() -> anyhow::Result<()> {
     // );
     // println!("{:?}", res);
 
-    // let res = counter.cancel_auto_renew(
-    //     domain_name.to_string(), 
-    //     &[]
-    // );
-    // println!("{:?}", res);
+    let res = counter.query_renew_map(domain_name.to_string());
+    println!("Renew map {:?}", res);
+    let res = counter.query_renew_jobs_map(53);
+    println!("Res {:?}", res);
+
+    let res = counter.cancel_auto_renew(
+        domain_name.to_string()
+    );
+    println!("{:?}", res);
 
     // let res = counter.query_errors()?;
     // println!("{:?}", res);
