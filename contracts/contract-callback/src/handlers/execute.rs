@@ -1,5 +1,9 @@
-use cosmwasm_std::{coins, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, Timestamp, Uint128, WasmMsg};
-use crate::{msg::{ExecuteMsg, MsgCancelCallback, MsgRequestCallback}, state::{RenewInfo, ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, DEFAULT_ID, JOBS, RENEW_JOBS_MAP, RENEW_MAP, STATE}, ContractError};
+use cosmwasm_std::{coins, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, Timestamp, Uint128, WasmMsg};
+use prost::Message;
+use crate::{msg::{ExecuteMsg, MsgCancelCallback, MsgRequestCallback}, 
+            state::{RenewInfo, ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, DEFAULT_ID, JOBS, RENEW_JOBS_MAP, RENEW_MAP, STATE}, 
+            ContractError};
+
 
 pub fn execute_handler(
     deps: DepsMut,

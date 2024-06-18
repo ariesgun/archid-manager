@@ -1,6 +1,8 @@
 use cosmwasm_std::{Binary, CosmosMsg, DepsMut, Env, Response, SubMsg, Uint128, WasmMsg};
 
-use crate::{msg::{MsgRequestCallback, SudoMsg}, state::{ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, RENEW_JOBS_MAP, RENEW_MAP, STATE}, ContractError};
+use crate::{msg::{MsgRequestCallback, SudoMsg}, 
+            state::{ACC_JOB_MAP, CONFIG, CUR_BLOCK_ID, RENEW_JOBS_MAP, RENEW_MAP, STATE},
+            ContractError};
 use std::u64;
 
 
@@ -24,7 +26,6 @@ pub fn handle_error(
     _input_payload: String,
     _error_message: String,
 ) -> Result<Response, ContractError> {
-
     Ok(Response::new())
 }
 

@@ -40,7 +40,6 @@ pub enum ExecuteMsg {
     },
     #[payable]
     Deposit {
-
     },
     Withdraw {
     },
@@ -166,4 +165,3 @@ pub struct QueryErrorsRequest {
     #[prost(string, tag = "1")]
     pub contract_address: ::prost::alloc::string::String,
 }
-
