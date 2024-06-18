@@ -130,7 +130,8 @@ mod tests {
             count: 17, 
             cw721_archid_addr: cw721_addr,
             archid_registry_addr: archid_registry_addr,
-            denom: "aarch".to_string()
+            denom: "aarch".to_string(),
+            cost_per_year: 250_000_000_000_000_000_u128,
          };
         let info = mock_info("creator", &coins(1000, "earth"));
 
@@ -170,7 +171,8 @@ mod tests {
             count: 17, 
             cw721_archid_addr: cw721_addr,
             archid_registry_addr: archid_registry_addr,
-            denom: "aarch".to_string()
+            denom: "aarch".to_string(),
+            cost_per_year: 250_000_000_000_000_000_u128,
          };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();

@@ -21,8 +21,8 @@ pub struct Config {
     pub denom: String,
     pub start_block: u64,
     pub cron_period: u32,
-    pub cron_fee_amount: u128
-    
+    pub cron_fee_amount: u128,
+    pub cost_per_year: u128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

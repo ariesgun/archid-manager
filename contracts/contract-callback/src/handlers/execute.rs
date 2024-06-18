@@ -40,14 +40,14 @@ pub fn mint_domain(deps: DepsMut, info: MessageInfo, _env: Env, domain_name: Str
     let registry_contract = config.archid_registry_addr;
     let cw721_contract = config.cw721_archid_addr;
     
-    let funds = &info.funds[0];
+    let res = cw_utils::must_pay(&info, &config.denom)?;
+    let registration: u64 =
+        u64::try_from(((res.checked_div(config.cost_per_year.into())).unwrap()).u128()).unwrap();
+    if registration < 1 {
+        return Err(ContractError::InvalidPayment { amount: res });
+    }
 
-    // let res = cw_utils::must_pay(&info, &denom)?;
-    // let registration: u64 =
-    //     u64::try_from(((res.checked_div(cost_per_year.into())).unwrap()).u128()).unwrap();
-    // if registration < 1 {
-    //     return Err(ContractError::InvalidPayment { amount: res });
-    // }
+    let funds = &info.funds[0];
 
     // Create registration msg
     let register_msg = archid_registry::msg::ExecuteMsg::Register {

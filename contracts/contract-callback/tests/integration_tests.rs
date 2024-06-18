@@ -1,3 +1,4 @@
+use anyhow::Ok;
 use contract_callback::{
     msg::{GetCountResponse, InstantiateMsg, QueryMsg}, AppContract, AppExecuteMsgFns, AppQueryMsgFns, ContractError
 };
@@ -232,6 +233,79 @@ fn renew_domain() -> anyhow::Result<()> {
     )?;
     assert_eq!(resolve_info.names, Some(vec!["domain1.arch".to_string()]));
 
+    Ok(())
+}
+
+#[test]
+fn deposit_unauthorized() -> anyhow::Result<()> {
+    let mock = MockBech32::new("mock");
+    let user1 = mock.addr_make("user1");
+    
+    mock.add_balance(
+        &user1, 
+        coins(5_000_000_000_000_000_000, "aarch".to_string()))?;
+
+    let (contract, cw721_archid_addr, archid_registry_addr)  = setup(mock.clone())?;
+
+    let res = contract
+        .call_as(&user1)
+        .deposit(
+            &[coin(1_000_000_000_000_000_000, "aarch".to_string())]
+        );
+
+    assert_eq!(true, res.is_err());
+
+    Ok(())
+}
+
+#[test]
+fn withdraw_unauthorized() -> anyhow::Result<()> {
+    let mock = MockBech32::new("mock");
+    let user1 = mock.addr_make("user1");
+    
+    mock.add_balance(
+        &user1, 
+        coins(5_000_000_000_000_000_000, "aarch".to_string()))?;
+
+    let (contract, cw721_archid_addr, archid_registry_addr)  = setup(mock.clone())?;
+
+    let res = contract
+        .call_as(&user1)
+        .withdraw();
+
+    assert_eq!(true, res.is_err());
+
+    Ok(())
+}
+
+#[test]
+fn deposit_withdraw_funds() -> anyhow::Result<()> {
+    let mock = MockBech32::new("mock");
+    let admin: Addr = mock.sender.clone();
+    
+    mock.add_balance(
+        &admin, 
+        coins(5_000_000_000_000_000_000, "aarch".to_string()))?;
+
+    let (contract, cw721_archid_addr, archid_registry_addr)  = setup(mock.clone())?;
+
+    let res = contract
+        .call_as(&admin)
+        .deposit(
+            &[coin(2_000_000_000_000_000_000, "aarch".to_string())]
+        )?;
+
+    let balance = mock.balance(contract.addr_str()?, Some("aarch".to_string()))?;
+
+    assert_eq!(balance, coins(2_000_000_000_000_000_000, "aarch".to_string()));
+
+    let res = contract
+        .call_as(&admin)
+        .withdraw()?;
+
+    let balance = mock.balance(contract.addr_str()?, Some("aarch".to_string()))?;
+
+    assert_eq!(balance, coins(0, "aarch".to_string()));
 
     Ok(())
 }
@@ -320,6 +394,7 @@ fn setup(mock: MockBech32) -> anyhow::Result<(AppContract<MockBech32>, Addr, Add
         cw721_archid_addr: cw721_archid_addr.clone(),
         archid_registry_addr: archid_registry_addr.clone(),
         denom: "aarch".to_string(),
+        cost_per_year: 250_000_000_000_000_000_u128,
     };
     let init_resp = contract.instantiate(
         &msg, 
