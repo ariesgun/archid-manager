@@ -10,6 +10,7 @@
       "archid_registry_addr",
       "cost_per_year",
       "count",
+      "cron_period",
       "cw721_archid_addr",
       "denom"
     ],
@@ -23,6 +24,11 @@
       "count": {
         "type": "integer",
         "format": "uint64",
+        "minimum": 0.0
+      },
+      "cron_period": {
+        "type": "integer",
+        "format": "uint32",
         "minimum": 0.0
       },
       "cw721_archid_addr": {

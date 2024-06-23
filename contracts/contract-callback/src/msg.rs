@@ -10,6 +10,7 @@ pub struct InstantiateMsg {
     pub archid_registry_addr: Addr,
     pub denom: String,
     pub cost_per_year: String,
+    pub cron_period: u32,
 }
 
 #[cw_serde]

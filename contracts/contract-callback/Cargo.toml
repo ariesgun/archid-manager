@@ -23,6 +23,10 @@ required-features = ["daemon"]
 name = "interact"
 required-features = ["daemon"]
 
+[[example]]
+name = "start-cron"
+required-features = ["daemon"]
+
 [features]
 default = ["export"]
 export = []

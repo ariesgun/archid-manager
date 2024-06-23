@@ -13,7 +13,7 @@ pub fn instantiate_handler(
     let state = State {
         count: msg.count,
         status: 0,
-        renew_status: 1,
+        renew_status: 0,
         owner: info.sender.clone(),
         callback_height: 0,
     };
@@ -28,7 +28,7 @@ pub fn instantiate_handler(
             cw721_archid_addr: msg.cw721_archid_addr,
             denom: msg.denom,
             start_block: env.block.height,
-            cron_period: 120_000, // 7 days
+            cron_period: msg.cron_period, // 7 days = 120_000
             cron_fee_amount: 270_000_000_000_000_000, // reservation fee
             cost_per_year: Uint128::from_str(msg.cost_per_year.as_str())?.u128(),
             gas_fee: 150_000_000_000_000_000,

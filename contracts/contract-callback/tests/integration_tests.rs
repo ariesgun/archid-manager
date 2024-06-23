@@ -511,6 +511,7 @@ fn setup(mock: MockBech32) -> anyhow::Result<(AppContract<MockBech32>, Addr, Add
         archid_registry_addr: archid_registry_addr.clone(),
         denom: "aarch".to_string(),
         cost_per_year: "1000000000000000000".to_string(),
+        cron_period: 120_000,
     };
     let init_resp = contract.instantiate(
         &msg, 

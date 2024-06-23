@@ -133,7 +133,8 @@ pub fn handle_renew_callback(deps: DepsMut, env: Env, job_id: u64) -> Result<Res
 
         // let messages = vec![register_stargate_msg];
         
-        renew_info.status = env.block.height;
+        renew_info.callback_height = env.block.height;
+        renew_info.status = 1;
         let _ = RENEW_MAP.save(deps.storage, job_renew_id, &renew_info);
 
         let submessage1 = SubMsg::reply_on_error(renew_excute.clone(), job_renew_id);
