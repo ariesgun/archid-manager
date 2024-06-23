@@ -31,11 +31,13 @@ pub fn main() -> anyhow::Result<()> {
 
     let res = counter.instantiate(
         &InstantiateMsg { 
-            count: 5,
+            count: 10,
             cw721_archid_addr: Addr::unchecked("archway146htsfvftmq8fl26977w9xgdwmsptr2quuf7yyra4j0gttx32z3secq008"),
             archid_registry_addr: Addr::unchecked("archway1lr8rstt40s697hqpedv2nvt27f4cuccqwvly9gnvuszxmcevrlns60xw4r"),
             denom: "aconst".to_string(),
             cost_per_year: "250000000000000000".to_string(),
+            // cron_period: 120_000, // 7 days
+            cron_period: 36, // 3 mins
         }, 
         Some(&counter.get_chain().sender()), 
         None

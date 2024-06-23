@@ -126,38 +126,25 @@ pub fn renew_domain(deps: DepsMut, info: MessageInfo, env: Env, domain_name: Str
     let registry_contract = config.archid_registry_addr;
     let cw721_contract = config.cw721_archid_addr;
     let denom = config.denom;
-
-    let query_msg  = archid_registry::msg::QueryMsg::Config {};
-    let config: archid_registry::state::Config = deps.querier.query_wasm_smart(
-        registry_contract.to_string(), 
-        &query_msg)?;
-    let cost_per_year = config.base_cost;
+    let cost_per_year = config.cost_per_year;
 
     let nft_id = domain_name.clone() + ".arch";
 
-    // let res: Uint128 = cw_utils::must_pay(&info, &String::from(denom.clone()))?;
-    // let registration: u64 =
-    //     u64::try_from(((res.checked_div(cost_per_year.into())).unwrap()).u128()).unwrap();
-    // if registration < 1 {
-    //     return Err(ContractError::InvalidPayment { amount: res });
-    // }
-
+    // 1. Transfer to contract
     let transfer_nft_msg = archid_token::ExecuteMsg::TransferNft { 
         recipient: env.contract.address.to_string(),
         token_id: nft_id.to_string() 
     };
-
-    // Transfer to contract
     let transfer_execute: CosmosMsg = WasmMsg::Execute {
         contract_addr: cw721_contract.to_string(),
         msg: to_json_binary(&transfer_nft_msg)?,
         funds: vec![]
     }.into();
 
+    // 2. Renew 
     let renew_domain_msg = archid_registry::msg::ExecuteMsg::RenewRegistration { 
-        name: domain_name.to_string() 
+        name: domain_name.clone() 
     };
-
     let renew_execute: CosmosMsg = WasmMsg::Execute { 
         contract_addr: registry_contract.to_string(), 
         msg: to_json_binary(&renew_domain_msg)?,
@@ -175,7 +162,7 @@ pub fn renew_domain(deps: DepsMut, info: MessageInfo, env: Env, domain_name: Str
         transfer_to = renew_info.owner;
     }
 
-    // Update resolver
+    // 3. Update resolver
     let update_msg = archid_registry::msg::ExecuteMsg::UpdateResolver {
         name: domain_name.clone(),
         new_resolver: transfer_to.clone(),
@@ -187,12 +174,11 @@ pub fn renew_domain(deps: DepsMut, info: MessageInfo, env: Env, domain_name: Str
         }
     .into();
 
+    // 4.Transfer back
     let transfer_nft_msg_2 = archid_token::ExecuteMsg::TransferNft { 
         recipient: transfer_to.to_string(),
         token_id: nft_id.to_string() 
     };
-
-    // Transfer back
     let transfer_execute_2: CosmosMsg = WasmMsg::Execute {
         contract_addr: cw721_contract.into(),
         msg: to_json_binary(&transfer_nft_msg_2)?,
@@ -259,14 +245,15 @@ pub fn schedule_auto_renew(deps: DepsMut, info: MessageInfo, env: Env, domain_na
 
     let diff_second = Timestamp::from_seconds(expiry_time).minus_seconds(now.seconds()).seconds();
     let diff_block = diff_second.checked_div(5).unwrap();
-    let block_div = diff_block.checked_div(u64::from(config.cron_period)).unwrap();
+    // let block_div = diff_block.checked_div(u64::from(config.cron_period)).unwrap();
+    let block_div = 1;
     let callback_height = block_div * u64::from(config.cron_period);
 
     if block_div == 0 {
         return Err(ContractError::ExpiryLong {});
     }
 
-    let block_idx = block_div + cur_block_id;
+    let block_idx = block_div + cur_block_id - 1;
     
     let data = RENEW_JOBS_MAP.may_load(deps.storage, block_idx)?;
     if data.is_none() {
@@ -341,7 +328,7 @@ pub fn start_cron_job_callback(deps: DepsMut, info: MessageInfo, env: Env) -> Re
     // let mut callback_height = env.block.height + 12; // Every 1 minute
 
     let cur_block_id = CUR_BLOCK_ID.load(deps.storage)?;
-    let renew_jobs_at_idx: Option<Vec<String>> = RENEW_JOBS_MAP.may_load(deps.storage, cur_block_id)?;
+    let renew_jobs_at_idx: Option<Vec<String>> = RENEW_JOBS_MAP.may_load(deps.storage, cur_block_id - 1)?;
     if renew_jobs_at_idx.is_some() && renew_jobs_at_idx.clone().unwrap().len() > 0 {
         callback_height = env.block.height + 1;
     }
@@ -360,7 +347,7 @@ pub fn start_cron_job_callback(deps: DepsMut, info: MessageInfo, env: Env) -> Re
 
     STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
         state.status = 1;
-        state.callback_height = callback_height;
+        state.callback_height = env.block.height;
         Ok(state)
     })?;
 
@@ -376,6 +363,7 @@ pub fn stop_cron_job_callback(deps: DepsMut, info: MessageInfo, env: Env) -> Res
 {
     let job_id = 0;
     let state = STATE.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
 
     if info.sender != state.owner {
         return Err(ContractError::Unauthorized {});
@@ -385,7 +373,7 @@ pub fn stop_cron_job_callback(deps: DepsMut, info: MessageInfo, env: Env) -> Res
     let cancel_msg = MsgCancelCallback {
         sender: contract_address.to_string(),
         job_id: job_id.clone(),
-        callback_height: state.callback_height.clone(),
+        callback_height: state.callback_height.clone() + u64::from(config.cron_period),
         contract_address: contract_address.clone()
     };
     let cancel_stargate_msg = CosmosMsg::Stargate {

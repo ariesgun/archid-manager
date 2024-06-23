@@ -132,6 +132,7 @@ mod tests {
             archid_registry_addr: archid_registry_addr,
             denom: "aarch".to_string(),
             cost_per_year: "250000000000000000".to_string(),
+            cron_period: 120_000,
          };
         let info = mock_info("creator", &coins(1000, "earth"));
 
@@ -173,6 +174,7 @@ mod tests {
             archid_registry_addr: archid_registry_addr,
             denom: "aarch".to_string(),
             cost_per_year: "250000000000000000".to_string(),
+            cron_period: 120_000
          };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
